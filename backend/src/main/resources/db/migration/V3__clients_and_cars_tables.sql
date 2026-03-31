@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS client (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(160) NOT NULL,
+    contact_info VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS car (
+    id VARCHAR(36) PRIMARY KEY,
+    client_id VARCHAR(36) NOT NULL REFERENCES client(id),
+    branch_id VARCHAR(64),
+    model VARCHAR(160) NOT NULL,
+    plate VARCHAR(64) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
