@@ -120,7 +120,7 @@ public class DemoSeedService {
         {11, "Cupra", "Formentor VZ e-Hybrid", "VD 141414", 120, 2023, 17500, "Magnetic tech", "Petrol blue", "Plug-in Hybrid (PHEV)", "2023-09-09"},
     };
 
-    /** { make, model, plateOrNull, vinSerial, year, km, color, trim, purchase, catalog, sell, prep, fuel } */
+    /** { make, model, plateOrNull, vinSerial, year, km, color, trim, purchase, catalog, sell, prep, fuel } — 40 dealer stock units */
     private static final Object[][] INVENTORY = {
         {"Porsche", "911 Carrera S", null, 201, 2022, 5200, "GT silver", "Black", 6_500_000L, 6_850_000L, 6_850_000L, 150_00L, "PETROL"},
         {"MINI", "Cooper S 3-door", null, 202, 2024, 3100, "British racing green", "Tan", 36_500_00L, 38_900_00L, 38_900_00L, 150_00L, "PETROL"},
@@ -136,6 +136,32 @@ public class DemoSeedService {
         {"Lamborghini", "Urus S", null, 212, 2023, 5600, "Nero noctis", "Rosso", 198_000_00L, 215_000_00L, 215_000_00L, 350_00L, "PETROL"},
         {"Aston Martin", "DBX707", null, 213, 2023, 7800, "Ultramarine black", "Black", 215_000_00L, 232_000_00L, 232_000_00L, 380_00L, "PETROL"},
         {"Bentley", "Continental GT Speed", null, 214, 2022, 9200, "Anthracite", "Hotspur", 185_000_00L, 198_000_00L, 198_000_00L, 320_00L, "PETROL"},
+        {"Volkswagen", "Golf R", "BE 801002", 215, 2023, 22000, "Lapiz blue", "Black", 48_000_00L, 51_900_00L, 51_900_00L, 150_00L, "PETROL"},
+        {"Audi", "A4 Avant 45 TFSI quattro", "ZH 801003", 216, 2022, 34000, "Floret silver", "Black", 38_500_00L, 42_500_00L, 42_500_00L, 140_00L, "PETROL"},
+        {"BMW", "320d Touring M Sport", "BS 801004", 217, 2021, 48000, "Mineral grey", "Oyster", 32_000_00L, 35_900_00L, 35_900_00L, 130_00L, "Diesel"},
+        {"Mercedes-Benz", "C 200 AMG Line", "GE 801005", 218, 2023, 19000, "Obsidian black", "Black", 41_000_00L, 44_800_00L, 44_800_00L, 150_00L, "PETROL"},
+        {"Škoda", "Octavia Combi 2.0 TSI RS", "ZG 801006", 219, 2022, 41000, "Velvet red", "Black", 28_500_00L, 31_500_00L, 31_500_00L, 120_00L, "PETROL"},
+        {"Seat", "Leon FR 1.5 eTSI", "VD 801007", 220, 2023, 27000, "Magnetic tech", "Grey", 24_000_00L, 26_900_00L, 26_900_00L, 110_00L, "Hybrid (Petrol)"},
+        {"Toyota", "Corolla Touring Sports 2.0 Hybrid", "LU 801008", 221, 2024, 12000, "Pearl white", "Black", 31_500_00L, 34_200_00L, 34_200_00L, 125_00L, "Hybrid (Petrol)"},
+        {"Honda", "Civic e:HEV Advance", "TI 801009", 222, 2023, 23000, "Crystal black", "Grey", 29_000_00L, 31_800_00L, 31_800_00L, 120_00L, "Hybrid (Petrol)"},
+        {"Mazda", "CX-5 2.5 AWD Exclusive-Line", "FR 801010", 223, 2022, 36000, "Soul red", "Black", 33_000_00L, 36_400_00L, 36_400_00L, 135_00L, "PETROL"},
+        {"Nissan", "Qashqai e-Power Tekna+", "NE 801011", 224, 2024, 8000, "Ceramic grey", "Light grey", 35_000_00L, 38_500_00L, 38_500_00L, 130_00L, "Hybrid (Petrol)"},
+        {"Hyundai", "Tucson 1.6 T-GDI PHEV", "SG 801012", 225, 2023, 16000, "Cyber grey", "Black", 39_000_00L, 42_900_00L, 42_900_00L, 140_00L, "Plug-in Hybrid (PHEV)"},
+        {"Kia", "Sportage 1.6 T-GDI GT-Line", "AR 801013", 226, 2023, 21000, "Yacht blue", "Black", 36_500_00L, 39_800_00L, 39_800_00L, 135_00L, "PETROL"},
+        {"Ford", "Puma ST-Line X", "BE 801014", 227, 2022, 29000, "Desert island blue", "Black", 22_500_00L, 24_900_00L, 24_900_00L, 100_00L, "PETROL"},
+        {"Peugeot", "3008 GT 1.2 PureTech", "VD 801015", 228, 2023, 18000, "Pearl white", "Brown", 32_000_00L, 34_500_00L, 34_500_00L, 125_00L, "PETROL"},
+        {"Volvo", "XC40 B4 Ultimate Dark", "ZH 801016", 229, 2024, 9500, "Onyx black", "Charcoal", 44_000_00L, 47_500_00L, 47_500_00L, 160_00L, "Hybrid (Petrol)"},
+        {"Subaru", "Outback 2.5i Platinum", "GR 801017", 230, 2022, 39000, "Crimson red", "Black", 36_000_00L, 38_900_00L, 38_900_00L, 130_00L, "PETROL"},
+        {"Dacia", "Duster Extreme TCe 150 4x4", null, 231, 2023, 25000, "Dust khaki", "Black", 21_000_00L, 23_500_00L, 23_500_00L, 95_00L, "PETROL"},
+        {"Suzuki", "Vitara 1.4 Boosterjet Allgrip", "TI 801018", 232, 2022, 32000, "Atlantis turquoise", "Black", 23_500_00L, 25_900_00L, 25_900_00L, 105_00L, "PETROL"},
+        {"Opel", "Mokka-e GS Line", "BS 801019", 233, 2024, 6000, "Jade white", "Grey", 35_000_00L, 37_800_00L, 37_800_00L, 130_00L, "Electric"},
+        {"Fiat", "500e La Prima", "GE 801020", 234, 2024, 4000, "Rose gold", "White", 28_000_00L, 30_500_00L, 30_500_00L, 110_00L, "Electric"},
+        {"Tesla", "Model 3 Long Range", "ZH 801021", 235, 2023, 28000, "Midnight silver", "Black", 42_000_00L, 45_900_00L, 45_900_00L, 150_00L, "Electric"},
+        {"MG", "4 Electric Trophy Extended Range", "LU 801022", 236, 2024, 11000, "Hunter green", "Black", 38_000_00L, 41_200_00L, 41_200_00L, 125_00L, "Electric"},
+        {"Cupra", "Born VZ", "VD 801023", 237, 2024, 7000, "Midnight black", "Petrol blue", 40_500_00L, 43_800_00L, 43_800_00L, 135_00L, "Electric"},
+        {"Jeep", "Avenger Summit e-Hybrid", "FR 801024", 238, 2024, 5000, "Sun yellow", "Black", 34_000_00L, 36_900_00L, 36_900_00L, 125_00L, "Hybrid (Petrol)"},
+        {"Land Rover", "Range Rover Evoque P250", "ZH 801025", 239, 2023, 17000, "Carpathian grey", "Ebony", 52_000_00L, 56_500_00L, 56_500_00L, 175_00L, "PETROL"},
+        {"Alpine", "A110 S", null, 240, 2023, 4500, "Bleu alpine", "Black", 62_000_00L, 67_900_00L, 67_900_00L, 200_00L, "PETROL"},
     };
 
     private final ClientRepository clientRepository;
