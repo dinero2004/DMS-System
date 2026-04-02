@@ -7,10 +7,13 @@ import java.time.OffsetDateTime;
 @Entity @Table(name = "sales_contract")
 public class SalesContractEntity {
     @Id @Column(length = 36) private String id;
-    @Column(name = "lead_id", nullable = false, length = 36) private String leadId;
+    @Column(name = "lead_id", length = 36) private String leadId;
     @Column(name = "client_id", nullable = false, length = 36) private String clientId;
     @Column(name = "car_id", length = 36) private String carId;
     @Column(name = "selling_price_cents", nullable = false) private Long sellingPriceCents;
+    @Column(name = "prep_fee_cents") private Long prepFeeCents;
+    @Column(name = "additional_costs_text", columnDefinition = "TEXT") private String additionalCostsText;
+    @Column(name = "additional_costs_cents") private Long additionalCostsCents;
     @Column(name = "insurance_company") private String insuranceCompany;
     @Column(name = "registration_plate", length = 64) private String registrationPlate;
     @Column(name = "contract_date", nullable = false) private LocalDate contractDate;
@@ -23,6 +26,9 @@ public class SalesContractEntity {
     public String getClientId() { return clientId; } public void setClientId(String v) { this.clientId = v; }
     public String getCarId() { return carId; } public void setCarId(String v) { this.carId = v; }
     public Long getSellingPriceCents() { return sellingPriceCents; } public void setSellingPriceCents(Long v) { this.sellingPriceCents = v; }
+    public Long getPrepFeeCents() { return prepFeeCents; } public void setPrepFeeCents(Long v) { this.prepFeeCents = v; }
+    public String getAdditionalCostsText() { return additionalCostsText; } public void setAdditionalCostsText(String v) { this.additionalCostsText = v; }
+    public Long getAdditionalCostsCents() { return additionalCostsCents; } public void setAdditionalCostsCents(Long v) { this.additionalCostsCents = v; }
     public String getInsuranceCompany() { return insuranceCompany; } public void setInsuranceCompany(String v) { this.insuranceCompany = v; }
     public String getRegistrationPlate() { return registrationPlate; } public void setRegistrationPlate(String v) { this.registrationPlate = v; }
     public LocalDate getContractDate() { return contractDate; } public void setContractDate(LocalDate v) { this.contractDate = v; }

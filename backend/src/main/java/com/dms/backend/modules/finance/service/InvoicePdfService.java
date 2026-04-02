@@ -3,6 +3,7 @@ package com.dms.backend.modules.finance.service;
 import com.dms.backend.modules.customervehicle.persistence.CarEntity;
 import com.dms.backend.modules.customervehicle.persistence.ClientEntity;
 import com.dms.backend.modules.finance.persistence.InvoiceEntity;
+import com.dms.backend.modules.sales.persistence.SalesContractEntity;
 import com.dms.backend.modules.workshop.persistence.WorkshopJobEntity;
 import com.dms.backend.modules.workshop.persistence.WorkshopJobItemEntity;
 import com.lowagie.text.*;
@@ -33,6 +34,10 @@ public class InvoicePdfService {
     private static final Font ITALIC = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 8, Color.BLACK);
 
     public byte[] render(InvoiceEntity inv, ClientEntity client, WorkshopJobEntity job, CarEntity car, List<WorkshopJobItemEntity> items) {
+        return render(inv, client, job, car, items, null);
+    }
+
+    public byte[] render(InvoiceEntity inv, ClientEntity client, WorkshopJobEntity job, CarEntity car, List<WorkshopJobItemEntity> items, SalesContractEntity contract) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Document doc = new Document(PageSize.A4, 50, 50, 40, 40);
@@ -77,13 +82,20 @@ public class InvoicePdfService {
                 PdfPTable vInfo = new PdfPTable(6);
                 vInfo.setWidthPercentage(100);
                 vInfo.setWidths(new float[]{16, 17, 17, 16, 17, 17});
-                addHeaderValue(vInfo, "License Plate", car.getPlate() != null ? car.getPlate() : "—");
+                String plateVal = car.getPlate() != null ? car.getPlate() : "—";
+                if (contract != null && contract.getRegistrationPlate() != null && !contract.getRegistrationPlate().isBlank()) {
+                    plateVal = contract.getRegistrationPlate();
+                }
+                addHeaderValue(vInfo, "License Plate", plateVal);
                 addHeaderValue(vInfo, "First Reg.", car.getFirstRegistrationDate() != null ? DF.format(car.getFirstRegistrationDate()) : "—");
                 addHeaderValue(vInfo, "Chassis No.", car.getVin() != null ? car.getVin() : "—");
                 addHeaderValue(vInfo, "Mileage", car.getMileageKm() != null ? String.format("%,d", car.getMileageKm()).replace(",", "'") : "—");
                 addHeaderValue(vInfo, "Registry No.", car.getStammnummer() != null ? car.getStammnummer() : "—");
-                addHeaderValue(vInfo, "MVS Code", "—");
+                addHeaderValue(vInfo, "Contract Date", contract != null ? DF.format(contract.getContractDate()) : "—");
                 doc.add(vInfo);
+            } else if (contract != null) {
+                doc.add(new Paragraph("Sales contract " + DF.format(contract.getContractDate()), H2));
+                doc.add(sp(2));
             }
             doc.add(sp(10));
 
@@ -96,6 +108,18 @@ public class InvoicePdfService {
                 hc.setBorderColor(BORDER); hc.setBorderWidth(0);
                 hc.setBorderWidthBottom(1); hc.setPadding(4);
                 itemTable.addCell(hc);
+            }
+
+            if (contract != null) {
+                String cn = (client.getFirstName() != null ? client.getFirstName() : "") + " " + (client.getLastName() != null ? client.getLastName() : "");
+                PdfPCell ref = new PdfPCell();
+                ref.setColspan(7); ref.setBorder(0); ref.setPadding(4);
+                ref.addElement(new Paragraph("Reference — Sales contract dated " + DF.format(contract.getContractDate()) + " · Customer: " + cn.trim(), ITALIC));
+                if (car != null) {
+                    ref.addElement(new Paragraph("Vehicle: " + (car.getMake() != null ? car.getMake() + " " : "") + car.getModel()
+                        + (car.getVin() != null ? " · VIN " + car.getVin() : ""), ITALIC));
+                }
+                itemTable.addCell(ref);
             }
 
             if (job != null && job.getDescription() != null && !job.getDescription().isBlank()) {
@@ -119,22 +143,57 @@ public class InvoicePdfService {
                         it.getDiscountPct() != null && it.getDiscountPct().compareTo(BigDecimal.ZERO) > 0 ? it.getDiscountPct().toPlainString() + "%" : "",
                         formatChf(lineTot));
                 }
+            } else if (contract != null) {
+                int art = 1;
+                long sellExcl = inclCentsToExclCents(contract.getSellingPriceCents());
+                subtotalCents += sellExcl;
+                String vDesc = car != null ? "Vehicle sale — " + (car.getMake() != null ? car.getMake() + " " : "") + car.getModel() : "Vehicle sale";
+                addItemRow(itemTable, String.format("%02d", art++), vDesc, "1.00", "pc", formatChf(sellExcl), "", formatChf(sellExcl));
+                long prep = contract.getPrepFeeCents() != null ? contract.getPrepFeeCents() : 0L;
+                if (prep > 0) {
+                    long prepExcl = inclCentsToExclCents(prep);
+                    subtotalCents += prepExcl;
+                    addItemRow(itemTable, String.format("%02d", art++), "Preparation fee", "1.00", "pc", formatChf(prepExcl), "", formatChf(prepExcl));
+                }
+                long addC = contract.getAdditionalCostsCents() != null ? contract.getAdditionalCostsCents() : 0L;
+                if (addC > 0) {
+                    long addExcl = inclCentsToExclCents(addC);
+                    subtotalCents += addExcl;
+                    String addLabel = contract.getAdditionalCostsText() != null && !contract.getAdditionalCostsText().isBlank()
+                        ? contract.getAdditionalCostsText() : "Additional costs";
+                    addItemRow(itemTable, String.format("%02d", art++), addLabel, "1.00", "pc", formatChf(addExcl), "", formatChf(addExcl));
+                }
             } else {
+                String desc = "Service";
+                if (car != null) {
+                    desc = "Vehicle Sale — " + (car.getMake() != null ? car.getMake() + " " : "") + car.getModel();
+                }
                 subtotalCents = inv.getAmountCents();
                 BigDecimal totalIncl = BigDecimal.valueOf(subtotalCents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
                 subtotalCents = totalIncl.divide(BigDecimal.ONE.add(VAT_RATE), 2, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).longValue();
-                addItemRow(itemTable, "", "Service", "1.00", "pc", formatChf(subtotalCents), "", formatChf(subtotalCents));
+                addItemRow(itemTable, "", desc, "1.00", "pc", formatChf(subtotalCents), "", formatChf(subtotalCents));
             }
 
             doc.add(itemTable);
             doc.add(sp(8));
 
             BigDecimal subtotal = BigDecimal.valueOf(subtotalCents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-            BigDecimal vat = subtotal.multiply(VAT_RATE).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal gross = subtotal.add(vat);
-            BigDecimal rounded = roundTo5Rappen(gross);
-            BigDecimal diff = rounded.subtract(gross);
+            BigDecimal vat;
+            BigDecimal rounded;
+            BigDecimal diff;
+            if (contract != null) {
+                BigDecimal invIncl = BigDecimal.valueOf(inv.getAmountCents()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                vat = invIncl.subtract(subtotal).max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal gross = subtotal.add(vat);
+                rounded = roundTo5Rappen(invIncl);
+                diff = rounded.subtract(gross);
+            } else {
+                vat = subtotal.multiply(VAT_RATE).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal gross = subtotal.add(vat);
+                rounded = roundTo5Rappen(gross);
+                diff = rounded.subtract(gross);
+            }
 
             PdfPTable totals = new PdfPTable(2);
             totals.setWidthPercentage(50);
@@ -181,6 +240,12 @@ public class InvoicePdfService {
 
     private static BigDecimal roundTo5Rappen(BigDecimal v) {
         return v.multiply(BigDecimal.valueOf(20)).setScale(0, RoundingMode.HALF_UP).divide(BigDecimal.valueOf(20), 2, RoundingMode.HALF_UP);
+    }
+
+    /** Convert tax-included CHF amount (cents) to net/excl-VAT cents for line display. */
+    private static long inclCentsToExclCents(long inclCents) {
+        BigDecimal incl = BigDecimal.valueOf(inclCents).divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+        return incl.divide(BigDecimal.ONE.add(VAT_RATE), 2, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).longValue();
     }
 
     private static String formatChf(long cents) {

@@ -165,6 +165,35 @@ public class CustomerVehicleController {
         return out;
     }
 
+    @PutMapping("/cars/{id}")
+    public ApiResponse updateCar(@PathVariable String id, @RequestBody @Valid RegisterCarRequest request) {
+        CarEntity car = carRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Car not found"));
+        if (StringUtils.hasText(request.make())) car.setMake(request.make().trim());
+        if (StringUtils.hasText(request.model())) car.setModel(request.model().trim());
+        if (request.plate() != null) car.setPlate(blankToNull(request.plate()));
+        if (request.vin() != null) {
+            String v = request.vin().trim();
+            if (!v.isEmpty() && v.length() != 17) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "VIN must be exactly 17 characters");
+            car.setVin(v.isEmpty() ? null : v);
+        }
+        if (request.stammnummer() != null) car.setStammnummer(blankToNull(request.stammnummer()));
+        if (request.modelYear() != null) car.setModelYear(request.modelYear());
+        if (request.color() != null) car.setColor(blankToNull(request.color()));
+        if (request.trimColor() != null) car.setTrimColor(blankToNull(request.trimColor()));
+        if (request.mileageKm() != null) car.setMileageKm(request.mileageKm());
+        if (request.notes() != null) car.setNotes(blankToNull(request.notes()));
+        if (request.purchasePriceCents() != null) car.setPurchasePriceCents(request.purchasePriceCents());
+        if (request.catalogPriceCents() != null) car.setCatalogPriceCents(request.catalogPriceCents());
+        if (request.usedValueCents() != null) car.setUsedValueCents(request.usedValueCents());
+        if (request.sellingPriceCents() != null) car.setSellingPriceCents(request.sellingPriceCents());
+        if (request.prepFeeCents() != null) car.setPrepFeeCents(request.prepFeeCents());
+        if (request.fuelType() != null) car.setFuelType(blankToNull(request.fuelType()));
+        if (request.arrivalDate() != null) car.setArrivalDate(request.arrivalDate().isBlank() ? null : LocalDate.parse(request.arrivalDate().trim()));
+        if (request.firstRegistrationDate() != null) car.setFirstRegistrationDate(request.firstRegistrationDate().isBlank() ? null : LocalDate.parse(request.firstRegistrationDate().trim()));
+        carRepository.save(car);
+        return new ApiResponse(id, "UPDATED", "Car updated");
+    }
+
     @DeleteMapping("/cars/{id}") @Transactional
     public ApiResponse deleteCar(@PathVariable String id) {
         if (!carRepository.existsById(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Car not found");

@@ -171,6 +171,7 @@ export const CAR_MAKES_MODELS: Record<string, Record<string, ModelInfo>> = {
     '296 GTS': { versions: ['Standard', 'Assetto Fiorano'] },
     'SF90': { versions: ['Stradale', 'Spider', 'XX'] },
     'Roma': { versions: ['Coupe', 'Spider'] },
+    'Roma Spider': { versions: ['Standard', 'Assetto Fiorano'] },
     'Purosangue': { versions: ['Standard'] },
     '812': { versions: ['Superfast', 'GTS', 'Competizione'] },
   },
@@ -221,6 +222,9 @@ export const CAR_MAKES_MODELS: Record<string, Record<string, ModelInfo>> = {
     'Ioniq 6': { versions: ['Standard', 'Long Range', 'AWD'] },
     'Santa Fe': { versions: ['Select', 'Trend', 'Style', 'PHEV'] },
   },
+  'Ineos': {
+    'Grenadier': { versions: ['Utility Wagon', 'Fieldmaster', 'Trialmaster', 'Station Wagon', 'Pickup'] },
+  },
   'Jaguar': {
     'F-Pace': { versions: ['S', 'SE', 'HSE', 'R-Dynamic', 'SVR'] },
     'E-Pace': { versions: ['S', 'SE', 'HSE', 'R-Dynamic'] },
@@ -233,6 +237,10 @@ export const CAR_MAKES_MODELS: Record<string, Record<string, ModelInfo>> = {
     'Wrangler': { versions: ['Sport', 'Sahara', 'Rubicon', '4xe'] },
     'Grand Cherokee': { versions: ['Limited', 'Summit', 'Overland', 'Trailhawk', '4xe'] },
     'Avenger': { versions: ['Longitude', 'Altitude', 'Summit'] },
+  },
+  'Rivian': {
+    'R1T': { versions: ['Dual-Motor', 'Performance Dual-Motor', 'Quad-Motor', 'Adventure'] },
+    'R1S': { versions: ['Dual-Motor', 'Performance Dual-Motor', 'Quad-Motor', 'Adventure'] },
   },
   'Kia': {
     'Picanto': { versions: ['Concept', 'Dream', 'Spirit', 'GT-Line'] },
@@ -247,7 +255,7 @@ export const CAR_MAKES_MODELS: Record<string, Record<string, ModelInfo>> = {
   },
   'Lamborghini': {
     'Huracán': { versions: ['EVO', 'STO', 'Tecnica', 'Sterrato'] },
-    'Urus': { versions: ['S', 'Performante', 'SE'] },
+    'Urus': { versions: ['S', 'Performante', 'SE', 'Urus S', 'Urus Performante'] },
     'Revuelto': { versions: ['Standard'] },
   },
   'Land Rover': {
@@ -268,6 +276,10 @@ export const CAR_MAKES_MODELS: Record<string, Record<string, ModelInfo>> = {
     'IS': { versions: ['300h', '500'] },
     'LC': { versions: ['500', '500h'] },
     'LBX': { versions: ['Elegant', 'Emotion', 'Cool'] },
+  },
+  'Lucid': {
+    'Air': { versions: ['Pure', 'Touring', 'Grand Touring', 'Sapphire'] },
+    'Gravity': { versions: ['Touring', 'Grand Touring'] },
   },
   'Maserati': {
     'Ghibli': { versions: ['GT', 'Modena', 'Trofeo'] },
@@ -353,7 +365,7 @@ export const CAR_MAKES_MODELS: Record<string, Record<string, ModelInfo>> = {
     'Polestar 4': { versions: ['Long Range', 'Performance'] },
   },
   'Porsche': {
-    '911': { versions: ['Carrera', 'Carrera S', 'Carrera 4', 'Carrera 4S', 'Targa 4', 'Turbo', 'Turbo S', 'GT3', 'GT3 RS'] },
+    '911': { versions: ['Carrera', 'Carrera S', 'Carrera 4', 'Carrera 4S', 'Carrera GTS', 'Targa 4', 'Targa 4S', 'Turbo', 'Turbo S', 'GT3', 'GT3 RS', 'Dakar', 'S/T'] },
     'Cayenne': { versions: ['Standard', 'S', 'E-Hybrid', 'GTS', 'Turbo GT', 'Coupe'] },
     'Macan': { versions: ['Standard', 'S', 'GTS', 'Turbo', 'Electric'] },
     'Panamera': { versions: ['Standard', 'S', 'E-Hybrid', 'GTS', 'Turbo', 'Sport Turismo'] },

@@ -52,8 +52,9 @@ public class FinanceController {
     }
 
     @PostMapping public ApiResponse create(@RequestBody @Valid CreateInvoiceRequest r) {
-        String clientId = resolveClientId(r.referenceType(), r.referenceId());
-        InvoiceEntity inv = invoiceService.create(clientId, r.referenceType(), r.referenceId(), r.amountCents(), r.currency() != null ? r.currency() : "CHF");
+        String type = r.referenceType().trim().toUpperCase();
+        String clientId = resolveClientId(type, r.referenceId());
+        InvoiceEntity inv = invoiceService.create(clientId, type, r.referenceId(), r.amountCents(), r.currency() != null ? r.currency() : "CHF");
         return new ApiResponse(inv.getId(), inv.getStatus(), "Invoice " + inv.getInvoiceNumber() + " created");
     }
 
@@ -76,26 +77,33 @@ public class FinanceController {
         CarEntity car = null;
         List<WorkshopJobItemEntity> items = null;
 
+        SalesContractEntity salesContract = null;
         if ("WORKSHOP_JOB".equals(inv.getReferenceType())) {
             job = jobRepo.findById(inv.getReferenceId()).orElse(null);
             if (job != null) {
                 car = carRepo.findById(job.getCarId()).orElse(null);
                 items = itemRepo.findByJobIdOrderByCreatedAtAsc(job.getId());
             }
+        } else if ("SALES_CONTRACT".equals(inv.getReferenceType())) {
+            salesContract = contractRepo.findById(inv.getReferenceId()).orElse(null);
+            if (salesContract != null && salesContract.getCarId() != null && !salesContract.getCarId().isBlank()) {
+                car = carRepo.findById(salesContract.getCarId()).orElse(null);
+            }
+            items = List.of();
         } else if ("SALES_LEAD".equals(inv.getReferenceType())) {
             SalesLeadEntity lead = leadRepo.findById(inv.getReferenceId()).orElse(null);
             String leadId = lead != null ? lead.getId() : inv.getReferenceId();
-            SalesContractEntity contract = contractRepo.findAllByOrderByCreatedAtDesc().stream()
+            salesContract = contractRepo.findAllByOrderByCreatedAtDesc().stream()
                 .filter(c -> leadId.equals(c.getLeadId()))
                 .findFirst()
                 .orElse(null);
-            if (contract != null && contract.getCarId() != null && !contract.getCarId().isBlank()) {
-                car = carRepo.findById(contract.getCarId()).orElse(null);
+            if (salesContract != null && salesContract.getCarId() != null && !salesContract.getCarId().isBlank()) {
+                car = carRepo.findById(salesContract.getCarId()).orElse(null);
             }
             items = List.of();
         }
 
-        byte[] bytes = pdfService.render(inv, client, job, car, items);
+        byte[] bytes = pdfService.render(inv, client, job, car, items, salesContract);
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + inv.getInvoiceNumber() + ".pdf\"")
             .contentType(MediaType.APPLICATION_PDF).body(bytes);
@@ -105,6 +113,10 @@ public class FinanceController {
         if ("WORKSHOP_JOB".equals(type)) {
             WorkshopJobEntity j = jobRepo.findById(refId).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Job not found"));
             return j.getClientId();
+        }
+        if ("SALES_CONTRACT".equals(type)) {
+            SalesContractEntity c = contractRepo.findById(refId).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Contract not found"));
+            return c.getClientId();
         }
         SalesLeadEntity l = leadRepo.findById(refId).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Lead not found"));
         return l.getClientId();

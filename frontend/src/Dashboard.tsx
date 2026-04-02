@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, type PieLabelRenderProps } from 'recharts'
+import { useTheme } from './theme'
 
-const PALETTE = ['#f97316', '#22c55e', '#3b82f6', '#eab308', '#ef4444', '#a855f7', '#06b6d4', '#ec4899']
+const PALETTE = ['#60a5fa', '#34d399', '#fbbf24', '#f87171', '#a78bfa', '#f472b6', '#38bdf8', '#fb923c']
 
 type Props = {
   clients: { id: string }[]
@@ -11,30 +13,63 @@ type Props = {
   invoices: { amountCents: number; status: string }[]
 }
 
+function cssVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
 export default function Dashboard({ clients, cars, jobs, leads, invoices }: Props) {
+  const { theme } = useTheme()
+  const chartUi = useMemo(() => {
+    const g = cssVar
+    const border = `1px solid ${g('--chart-tooltip-border')}`
+    return {
+      tooltip: {
+        contentStyle: {
+          background: g('--chart-tooltip-bg'),
+          border,
+          borderRadius: '8px',
+          color: g('--chart-tooltip-text'),
+          fontSize: '.82rem',
+          fontFamily: "'Century Gothic', sans-serif",
+        },
+        itemStyle: { color: g('--chart-tooltip-text') },
+        labelStyle: { color: g('--chart-tooltip-muted') },
+      },
+      legendWrapper: { paddingTop: 14, fontSize: '.78rem', color: g('--chart-legend-color') },
+      axisTickX: { fill: g('--chart-axis-tick'), dy: 5 },
+      axisTickY: { fill: g('--chart-axis-tick') },
+      axisLine: { stroke: g('--chart-axis-line') },
+      cursor: { fill: g('--chart-cursor-fill') },
+      pieStroke: g('--chart-pie-stroke'),
+    }
+  }, [theme])
+
+  const { t, i18n } = useTranslation()
+  const tk = t as (k: string, o?: Record<string, string | number>) => string
+
   const vehicleClass = useMemo(() => {
     const m: Record<string, number> = {}
-    cars.forEach(c => { const r = c.vehicleRole.replace('_', ' '); m[r] = (m[r] || 0) + 1 })
-    return Object.entries(m).map(([name, value]) => ({ name, value }))
-  }, [cars])
+    cars.forEach(c => { const r = c.vehicleRole; m[r] = (m[r] || 0) + 1 })
+    return Object.entries(m).map(([key, value]) => ({ name: tk(`role.${key}`), value }))
+  }, [cars, i18n.language, tk])
 
   const jobsByStatus = useMemo(() => {
     const m: Record<string, number> = {}
     jobs.forEach(j => { m[j.status] = (m[j.status] || 0) + 1 })
-    return Object.entries(m).map(([name, value]) => ({ name: name.replace('_', ' '), value }))
-  }, [jobs])
+    return Object.entries(m).map(([key, value]) => ({ name: tk(`status.${key}`), value }))
+  }, [jobs, i18n.language, tk])
 
   const salesPipeline = useMemo(() => {
     const m: Record<string, number> = {}
     leads.forEach(l => { m[l.status] = (m[l.status] || 0) + 1 })
-    return Object.entries(m).map(([name, value]) => ({ name, value }))
-  }, [leads])
+    return Object.entries(m).map(([key, value]) => ({ name: tk(`status.${key}`), value }))
+  }, [leads, i18n.language, tk])
 
   const revenueByStatus = useMemo(() => {
     const m: Record<string, number> = {}
     invoices.forEach(i => { m[i.status] = (m[i.status] || 0) + i.amountCents / 100 })
-    return Object.entries(m).map(([name, value]) => ({ name, value: Math.round(value) }))
-  }, [invoices])
+    return Object.entries(m).map(([key, value]) => ({ name: tk(`status.${key}`), value: Math.round(value) }))
+  }, [invoices, i18n.language, tk])
 
   const topMakes = useMemo(() => {
     const m: Record<string, number> = {}
@@ -53,28 +88,90 @@ export default function Dashboard({ clients, cars, jobs, leads, invoices }: Prop
   return (
     <section className="dashboard">
       <div className="stat-row">
-        <div className="stat-card"><span className="stat-value">{clients.length}</span><span className="stat-label">Clients</span></div>
-        <div className="stat-card"><span className="stat-value">{cars.length}</span><span className="stat-label">Vehicles</span></div>
-        <div className="stat-card"><span className="stat-value">{jobs.filter(j => j.status !== 'DONE').length}</span><span className="stat-label">Active Jobs</span></div>
-        <div className="stat-card"><span className="stat-value">CHF {totalRevenue.toLocaleString('de-CH', { minimumFractionDigits: 0 })}</span><span className="stat-label">Total Invoiced</span></div>
+        <div className="stat-card"><span className="stat-value">{clients.length}</span><span className="stat-label">{t('dashboard.clients')}</span></div>
+        <div className="stat-card"><span className="stat-value">{cars.length}</span><span className="stat-label">{t('dashboard.vehicles')}</span></div>
+        <div className="stat-card"><span className="stat-value">{jobs.filter(j => j.status !== 'DONE').length}</span><span className="stat-label">{t('dashboard.activeJobs')}</span></div>
+        <div className="stat-card"><span className="stat-value">CHF {totalRevenue.toLocaleString('de-CH', { minimumFractionDigits: 0 })}</span><span className="stat-label">{t('dashboard.totalInvoiced')}</span></div>
       </div>
 
       <div className="chart-row">
-        {vehicleClass.length > 0 && <div className="chart-card"><h4>Vehicle Classification</h4><ResponsiveContainer width="100%" height={250}><PieChart><Pie data={vehicleClass} dataKey="value" cx="50%" cy="45%" outerRadius={75} label={renderLabel} labelLine={false}>{vehicleClass.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}</Pie><Tooltip /><Legend wrapperStyle={{ paddingTop: 12 }} /></PieChart></ResponsiveContainer></div>}
-        {jobsByStatus.length > 0 && <div className="chart-card"><h4>Workshop Jobs</h4><ResponsiveContainer width="100%" height={250}><BarChart data={jobsByStatus} margin={{ bottom: 10 }}><XAxis dataKey="name" fontSize={11} tick={{ dy: 5 }} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip /><Bar dataKey="value" fill="#f97316" radius={[4,4,0,0]} /></BarChart></ResponsiveContainer></div>}
-        {salesPipeline.length > 0 && <div className="chart-card"><h4>Sales Pipeline</h4><ResponsiveContainer width="100%" height={250}><PieChart><Pie data={salesPipeline} dataKey="value" cx="50%" cy="45%" outerRadius={75} label={renderLabel} labelLine={false}>{salesPipeline.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}</Pie><Tooltip /><Legend wrapperStyle={{ paddingTop: 12 }} /></PieChart></ResponsiveContainer></div>}
+        {vehicleClass.length > 0 && (
+          <div className="chart-card">
+            <h4>{t('dashboard.vehicleClass')}</h4>
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie data={vehicleClass} dataKey="value" cx="50%" cy="45%" outerRadius={80} label={renderLabel} labelLine={false} stroke={chartUi.pieStroke} strokeWidth={1}>
+                  {vehicleClass.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                </Pie>
+                <Tooltip {...chartUi.tooltip} />
+                <Legend wrapperStyle={chartUi.legendWrapper} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        {jobsByStatus.length > 0 && (
+          <div className="chart-card">
+            <h4>{t('dashboard.workshopJobs')}</h4>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={jobsByStatus} margin={{ bottom: 12 }}>
+                <XAxis dataKey="name" fontSize={11} tick={chartUi.axisTickX} axisLine={chartUi.axisLine} tickLine={false} />
+                <YAxis allowDecimals={false} fontSize={11} tick={chartUi.axisTickY} axisLine={false} tickLine={false} />
+                <Tooltip {...chartUi.tooltip} cursor={chartUi.cursor} />
+                <Bar dataKey="value" fill="var(--accent)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        {salesPipeline.length > 0 && (
+          <div className="chart-card">
+            <h4>{t('dashboard.salesPipeline')}</h4>
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie data={salesPipeline} dataKey="value" cx="50%" cy="45%" outerRadius={80} label={renderLabel} labelLine={false} stroke={chartUi.pieStroke} strokeWidth={1}>
+                  {salesPipeline.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                </Pie>
+                <Tooltip {...chartUi.tooltip} />
+                <Legend wrapperStyle={chartUi.legendWrapper} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       <div className="chart-row">
-        {revenueByStatus.length > 0 && <div className="chart-card"><h4>Revenue by Status (CHF)</h4><ResponsiveContainer width="100%" height={250}><BarChart data={revenueByStatus} margin={{ bottom: 10 }}><XAxis dataKey="name" fontSize={11} tick={{ dy: 5 }} /><YAxis fontSize={11} /><Tooltip /><Bar dataKey="value" fill="#22c55e" radius={[4,4,0,0]} /></BarChart></ResponsiveContainer></div>}
-        {topMakes.length > 0 && <div className="chart-card"><h4>Top Makes</h4><ResponsiveContainer width="100%" height={250}><BarChart data={topMakes} margin={{ bottom: 10 }}><XAxis dataKey="name" fontSize={10} tick={{ dy: 5 }} /><YAxis allowDecimals={false} fontSize={11} /><Tooltip /><Bar dataKey="value" fill="#3b82f6" radius={[4,4,0,0]} /></BarChart></ResponsiveContainer></div>}
+        {revenueByStatus.length > 0 && (
+          <div className="chart-card">
+            <h4>{t('dashboard.revenueByStatus')}</h4>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={revenueByStatus} margin={{ bottom: 12 }}>
+                <XAxis dataKey="name" fontSize={11} tick={chartUi.axisTickX} axisLine={chartUi.axisLine} tickLine={false} />
+                <YAxis fontSize={11} tick={chartUi.axisTickY} axisLine={false} tickLine={false} />
+                <Tooltip {...chartUi.tooltip} cursor={chartUi.cursor} />
+                <Bar dataKey="value" fill="var(--success)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        {topMakes.length > 0 && (
+          <div className="chart-card">
+            <h4>{t('dashboard.topMakes')}</h4>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={topMakes} margin={{ bottom: 12 }}>
+                <XAxis dataKey="name" fontSize={10} tick={chartUi.axisTickX} axisLine={chartUi.axisLine} tickLine={false} />
+                <YAxis allowDecimals={false} fontSize={11} tick={chartUi.axisTickY} axisLine={false} tickLine={false} />
+                <Tooltip {...chartUi.tooltip} cursor={chartUi.cursor} />
+                <Bar dataKey="value" fill="var(--accent-2)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
         <div className="chart-card summary-card">
-          <h4>Financial Summary</h4>
+          <h4>{t('dashboard.financialSummary')}</h4>
           <div className="summary-grid">
-            <div className="summary-item"><span className="summary-val">CHF {paidRevenue.toLocaleString('de-CH')}</span><span className="summary-lbl">Paid</span></div>
-            <div className="summary-item"><span className="summary-val">CHF {(totalRevenue - paidRevenue).toLocaleString('de-CH')}</span><span className="summary-lbl">Outstanding</span></div>
-            <div className="summary-item"><span className="summary-val">{invoices.length}</span><span className="summary-lbl">Invoices</span></div>
-            <div className="summary-item"><span className="summary-val">{leads.length}</span><span className="summary-lbl">Leads</span></div>
+            <div className="summary-item"><span className="summary-val">CHF {paidRevenue.toLocaleString('de-CH')}</span><span className="summary-lbl">{t('dashboard.paid')}</span></div>
+            <div className="summary-item"><span className="summary-val">CHF {(totalRevenue - paidRevenue).toLocaleString('de-CH')}</span><span className="summary-lbl">{t('dashboard.outstanding')}</span></div>
+            <div className="summary-item"><span className="summary-val">{invoices.length}</span><span className="summary-lbl">{t('dashboard.invoices')}</span></div>
+            <div className="summary-item"><span className="summary-val">{leads.length}</span><span className="summary-lbl">{t('dashboard.leads')}</span></div>
           </div>
         </div>
       </div>

@@ -69,7 +69,7 @@ public class FinancingController {
             .contentType(MediaType.APPLICATION_PDF).body(bytes);
     }
 
-    static long calcMonthly(String type, long vehicleValueCents, long downPaymentCents, Long residualCents, int months, double annualPct) {
+    public static long calcMonthly(String type, long vehicleValueCents, long downPaymentCents, Long residualCents, int months, double annualPct) {
         double principal = vehicleValueCents - downPaymentCents;
         double monthlyRate = annualPct / 100.0 / 12.0;
         if ("LEASING".equalsIgnoreCase(type)) {

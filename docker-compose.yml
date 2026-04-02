@@ -1,0 +1,3 @@
+# Convenience: same Postgres as backend/compose.yml (for `docker compose up -d` from repo root)
+include:
+  - path: backend/compose.yml

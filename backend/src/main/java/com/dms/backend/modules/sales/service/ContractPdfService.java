@@ -15,98 +15,164 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class ContractPdfService {
-    private static final String COMPANY = "Apex Motorsport";
+    private static final String CO = "Apex Motorsport";
     private static final String ADDR = "Schenuerweg 28, 3008 Bern";
     private static final String TEL = "078 234 80 28";
-    private static final DateTimeFormatter DFMT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-    private static final Font TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(15, 23, 42));
-    private static final Font H2 = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, new Color(15, 23, 42));
-    private static final Font BODY = FontFactory.getFont(FontFactory.HELVETICA, 9, Color.DARK_GRAY);
-    private static final Font BOLD9 = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.DARK_GRAY);
+    private static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    private static final BigDecimal VAT_RATE = new BigDecimal("0.081");
+    private static final Color BORDER = new Color(180, 180, 180);
+
+    private static final Font TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, Color.BLACK);
+    private static final Font H2 = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.BLACK);
+    private static final Font BODY = FontFactory.getFont(FontFactory.HELVETICA, 8, Color.BLACK);
+    private static final Font BOLD8 = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, Color.BLACK);
     private static final Font SMALL = FontFactory.getFont(FontFactory.HELVETICA, 7, Color.GRAY);
 
     public byte[] render(SalesContractEntity ct, ClientEntity client, CarEntity car) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Document doc = new Document(PageSize.A4, 40, 40, 30, 30);
+            Document doc = new Document(PageSize.A4, 50, 50, 40, 40);
             PdfWriter.getInstance(doc, baos);
             doc.open();
 
-            try { Image img = Image.getInstance(new ClassPathResource("apex-logo.png").getURL()); img.scaleToFit(90, 36); doc.add(img); } catch (Exception ignored) {}
+            try { Image img = Image.getInstance(new ClassPathResource("apex-logo.png").getURL()); img.scaleToFit(80, 32); doc.add(img); } catch (Exception ignored) {}
+            doc.add(new Paragraph(CO + " · " + ADDR + " · Tel: " + TEL, SMALL));
+            doc.add(sp(6));
 
-            doc.add(new Paragraph(COMPANY, TITLE));
-            doc.add(new Paragraph(ADDR + " · Tel: " + TEL, BODY));
-            doc.add(sp(10));
+            String clientName = ((client.getFirstName() != null ? client.getFirstName() : "") + " " + (client.getLastName() != null ? client.getLastName() : "")).trim();
+            Paragraph addr = new Paragraph();
+            addr.setAlignment(Element.ALIGN_RIGHT);
+            addr.add(new Chunk(clientName + "\n", BOLD8));
+            if (client.getAddressLine() != null) addr.add(new Chunk(client.getAddressLine() + "\n", BODY));
+            String city = "";
+            if (client.getZipCode() != null) city += client.getZipCode() + " ";
+            if (client.getCity() != null) city += client.getCity();
+            if (!city.isBlank()) addr.add(new Chunk(city.trim() + "\n", BODY));
+            if (client.getPhone() != null) addr.add(new Chunk("Tel: " + client.getPhone() + "\n", BODY));
+            if (client.getEmail() != null) addr.add(new Chunk(client.getEmail() + "\n", BODY));
+            if (client.getBirthday() != null) addr.add(new Chunk("Date of Birth: " + DF.format(client.getBirthday()), BODY));
+            doc.add(addr);
+            doc.add(sp(12));
+
             doc.add(new Paragraph("Vehicle Sales Contract", TITLE));
-            doc.add(new Paragraph("Date: " + DFMT.format(ct.getContractDate()), BODY));
+            doc.add(sp(6));
+
+            PdfPTable dateRow = new PdfPTable(4);
+            dateRow.setWidthPercentage(100);
+            dateRow.setWidths(new float[]{25, 25, 25, 25});
+            addHeaderValue(dateRow, "Contract Date", DF.format(ct.getContractDate()));
+            addHeaderValue(dateRow, "Customer No.", client.getId().substring(0, 6));
+            addHeaderValue(dateRow, "Phone", client.getPhone() != null ? client.getPhone() : "—");
+            addHeaderValue(dateRow, "Insurance", ct.getInsuranceCompany() != null ? ct.getInsuranceCompany() : "—");
+            doc.add(dateRow);
+            doc.add(sp(6));
+
+            if (car != null) {
+                String vehicle = (car.getMake() != null ? car.getMake() + " " : "") + car.getModel();
+                doc.add(new Paragraph(vehicle, H2));
+                doc.add(sp(2));
+                PdfPTable vInfo = new PdfPTable(6);
+                vInfo.setWidthPercentage(100);
+                vInfo.setWidths(new float[]{16, 17, 17, 16, 17, 17});
+                addHeaderValue(vInfo, "License Plate", ct.getRegistrationPlate() != null ? ct.getRegistrationPlate() : (car.getPlate() != null ? car.getPlate() : "—"));
+                addHeaderValue(vInfo, "First Reg.", car.getFirstRegistrationDate() != null ? DF.format(car.getFirstRegistrationDate()) : "—");
+                addHeaderValue(vInfo, "Chassis No.", car.getVin() != null ? car.getVin() : "—");
+                addHeaderValue(vInfo, "Mileage", car.getMileageKm() != null ? String.format("%,d", car.getMileageKm()).replace(",", "'") + " km" : "—");
+                addHeaderValue(vInfo, "Fuel Type", car.getFuelType() != null ? car.getFuelType() : "—");
+                addHeaderValue(vInfo, "Year", car.getModelYear() != null ? String.valueOf(car.getModelYear()) : "—");
+                doc.add(vInfo);
+            }
+            doc.add(sp(10));
+
+            PdfPTable itemTable = new PdfPTable(4);
+            itemTable.setWidthPercentage(100);
+            itemTable.setWidths(new float[]{10, 50, 20, 20});
+            String[] headers = {"Pos.", "Description", "Qty", "Amount (CHF)"};
+            for (String h : headers) {
+                PdfPCell hc = new PdfPCell(new Phrase(h, H2));
+                hc.setBorderColor(BORDER); hc.setBorderWidth(0); hc.setBorderWidthBottom(1); hc.setPadding(4);
+                itemTable.addCell(hc);
+            }
+
+            int pos = 1;
+            long subtotalCents = ct.getSellingPriceCents();
+            addContractRow(itemTable, String.valueOf(pos++), "Vehicle — " + (car != null ? ((car.getMake() != null ? car.getMake() + " " : "") + car.getModel()) : "—"), "1", fmtChf(ct.getSellingPriceCents()));
+
+            long prepFee = ct.getPrepFeeCents() != null ? ct.getPrepFeeCents() : 0;
+            if (prepFee > 0) {
+                subtotalCents += prepFee;
+                addContractRow(itemTable, String.valueOf(pos++), "Preparation Fee", "1", fmtChf(prepFee));
+            }
+
+            long additionalCosts = ct.getAdditionalCostsCents() != null ? ct.getAdditionalCostsCents() : 0;
+            if (additionalCosts > 0 && ct.getAdditionalCostsText() != null) {
+                subtotalCents += additionalCosts;
+                addContractRow(itemTable, String.valueOf(pos++), ct.getAdditionalCostsText(), "1", fmtChf(additionalCosts));
+            }
+
+            doc.add(itemTable);
             doc.add(sp(8));
 
-            PdfPTable parties = new PdfPTable(2); parties.setWidthPercentage(100); parties.setWidths(new float[]{50, 50});
-            PdfPCell sellerCell = partyCell("Seller", COMPANY + "\n" + ADDR + "\nTel: " + TEL);
-            String buyerName = (client.getFirstName() + " " + client.getLastName()).trim();
-            StringBuilder buyerInfo = new StringBuilder(buyerName);
-            if (client.getAddressLine() != null) buyerInfo.append("\n").append(client.getAddressLine());
-            String cityLine = joinCity(client); if (cityLine != null) buyerInfo.append("\n").append(cityLine);
-            if (client.getPhone() != null) buyerInfo.append("\nTel: ").append(client.getPhone());
-            if (client.getEmail() != null) buyerInfo.append("\n").append(client.getEmail());
-            if (client.getBirthday() != null) buyerInfo.append("\nDate of Birth: ").append(DFMT.format(client.getBirthday()));
-            PdfPCell buyerCell = partyCell("Buyer", buyerInfo.toString());
-            parties.addCell(sellerCell); parties.addCell(buyerCell);
-            doc.add(parties); doc.add(sp(8));
+            BigDecimal subtotal = BigDecimal.valueOf(subtotalCents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            BigDecimal vatAmt = subtotal.multiply(VAT_RATE).divide(VAT_RATE.add(BigDecimal.ONE), 2, RoundingMode.HALF_UP);
+            BigDecimal exclVat = subtotal.subtract(vatAmt);
 
-            doc.add(new Paragraph("Vehicle Details", H2)); doc.add(sp(2));
-            PdfPTable vt = new PdfPTable(2); vt.setWidthPercentage(100); vt.setWidths(new float[]{30, 70});
-            addRow(vt, "Make / Model", (car.getMake() != null ? car.getMake() + " " : "") + car.getModel());
-            if (car.getVin() != null) addRow(vt, "VIN", car.getVin());
-            if (car.getStammnummer() != null) addRow(vt, "Stammnummer", car.getStammnummer());
-            if (car.getColor() != null) addRow(vt, "Color", car.getColor());
-            if (car.getTrimColor() != null) addRow(vt, "Trim Color", car.getTrimColor());
-            if (car.getModelYear() != null) addRow(vt, "Year", String.valueOf(car.getModelYear()));
-            if (car.getMileageKm() != null) addRow(vt, "Mileage", car.getMileageKm() + " km");
-            if (car.getFuelType() != null) addRow(vt, "Fuel Type", car.getFuelType());
-            if (car.getFirstRegistrationDate() != null) addRow(vt, "First Registration", DFMT.format(car.getFirstRegistrationDate()));
-            if (ct.getRegistrationPlate() != null) addRow(vt, "Reg. Plate", ct.getRegistrationPlate());
-            if (ct.getInsuranceCompany() != null) addRow(vt, "Insurance", ct.getInsuranceCompany());
-            doc.add(vt); doc.add(sp(8));
+            PdfPTable totals = new PdfPTable(2);
+            totals.setWidthPercentage(50);
+            totals.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            totals.setWidths(new float[]{60, 40});
+            addTotalRow(totals, "Subtotal (excl. VAT)", fmtBd(exclVat), false);
+            addTotalRow(totals, "VAT 8.1%", fmtBd(vatAmt), false);
+            addTotalRow(totals, "Total (incl. VAT)", "CHF " + fmtBd(subtotal), true);
+            doc.add(totals);
 
-            BigDecimal price = BigDecimal.valueOf(ct.getSellingPriceCents()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-            BigDecimal vatRate = BigDecimal.valueOf(0.081);
-            BigDecimal vatAmt = price.multiply(vatRate).divide(vatRate.add(BigDecimal.ONE), 2, RoundingMode.HALF_UP);
-            doc.add(new Paragraph("Selling price (incl. 8.1% VAT): CHF " + price.toPlainString(), BOLD9));
-            doc.add(new Paragraph("Thereof VAT: CHF " + vatAmt.toPlainString(), BODY));
-
-            if (ct.getNotes() != null && !ct.getNotes().isBlank()) { doc.add(sp(6)); doc.add(new Paragraph("Notes", H2)); doc.add(new Paragraph(ct.getNotes(), BODY)); }
+            if (ct.getNotes() != null && !ct.getNotes().isBlank()) {
+                doc.add(sp(6)); doc.add(new Paragraph("Notes", H2)); doc.add(new Paragraph(ct.getNotes(), BODY));
+            }
 
             doc.add(sp(20));
             PdfPTable sig = new PdfPTable(2); sig.setWidthPercentage(100);
-            sig.addCell(sigCell("Seller (" + COMPANY + ")")); sig.addCell(sigCell("Buyer (" + buyerName + ")"));
+            sig.addCell(sigCell("Seller (" + CO + ")")); sig.addCell(sigCell("Buyer (" + clientName + ")"));
             doc.add(sig); doc.add(sp(8));
-            doc.add(new Paragraph("Place: Bern    Date: " + DFMT.format(ct.getContractDate()), BODY));
+            doc.add(new Paragraph("Place: Bern    Date: " + DF.format(ct.getContractDate()), BODY));
             doc.add(sp(10));
-            doc.add(new Paragraph(COMPANY + " · " + ADDR + " · " + TEL, SMALL));
+            doc.add(new Paragraph(CO + " · " + ADDR + " · " + TEL, SMALL));
 
             doc.close();
             return baos.toByteArray();
         } catch (DocumentException e) { throw new IllegalStateException("Failed to build contract PDF", e); }
     }
 
-    private static void addRow(PdfPTable t, String label, String val) {
-        PdfPCell lc = new PdfPCell(new Phrase(label, BOLD9)); lc.setBorderColor(new Color(200, 208, 218)); lc.setPadding(4); t.addCell(lc);
-        PdfPCell vc = new PdfPCell(new Phrase(val, BODY)); vc.setBorderColor(new Color(200, 208, 218)); vc.setPadding(4); t.addCell(vc);
+    private static void addHeaderValue(PdfPTable t, String label, String value) {
+        PdfPCell c = new PdfPCell(); c.setBorder(0); c.setPadding(2);
+        c.addElement(new Paragraph(label, H2)); c.addElement(new Paragraph(value, BODY)); t.addCell(c);
     }
-    private static PdfPCell partyCell(String title, String body) {
-        PdfPCell c = new PdfPCell(); c.setBorder(0); c.setPadding(4);
-        c.addElement(new Paragraph(title, H2)); c.addElement(new Paragraph(body, BODY)); return c;
+
+    private static void addContractRow(PdfPTable t, String pos, String desc, String qty, String amount) {
+        String[] vals = {pos, desc, qty, amount};
+        for (int i = 0; i < vals.length; i++) {
+            PdfPCell c = new PdfPCell(new Phrase(vals[i], BODY));
+            c.setBorder(0); c.setPadding(3);
+            if (i >= 2) c.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            t.addCell(c);
+        }
     }
+
+    private static void addTotalRow(PdfPTable t, String label, String val, boolean bold) {
+        Font f = bold ? BOLD8 : BODY;
+        PdfPCell lc = new PdfPCell(new Phrase(label, f)); lc.setBorder(0); lc.setPadding(3); t.addCell(lc);
+        PdfPCell vc = new PdfPCell(new Phrase(val, f)); vc.setBorder(0); vc.setPadding(3); vc.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        if (bold) { vc.setBorderWidthTop(1); vc.setBorderColor(BORDER); lc.setBorderWidthTop(1); lc.setBorderColor(BORDER); }
+        t.addCell(vc);
+    }
+
     private static PdfPCell sigCell(String label) {
         PdfPCell c = new PdfPCell(); c.setBorder(0); c.setPadding(6);
         c.addElement(sp(24)); c.addElement(new Paragraph("________________________________________", BODY));
         c.addElement(new Paragraph(label, SMALL)); return c;
     }
+
+    private static String fmtChf(long cents) { return BigDecimal.valueOf(cents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP).toPlainString(); }
+    private static String fmtBd(BigDecimal v) { return v.setScale(2, RoundingMode.HALF_UP).toPlainString(); }
     private static Paragraph sp(float h) { Paragraph p = new Paragraph(" "); p.setSpacingBefore(h); return p; }
-    private static String joinCity(ClientEntity c) {
-        if (c.getZipCode() == null && c.getCity() == null) return null;
-        if (c.getZipCode() == null) return c.getCity(); if (c.getCity() == null) return c.getZipCode();
-        return c.getZipCode() + " " + c.getCity();
-    }
 }
