@@ -1,0 +1,10 @@
+{
+  "name": "dms-docs",
+  "private": true,
+  "scripts": {
+    "build:html": "node build-html.mjs"
+  },
+  "devDependencies": {
+    "marked": "^15.0.0"
+  }
+}

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Design Patterns &amp; Struktur — DMS</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, "Segoe UI", Roboto, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+    h1, h2, h3 { line-height: 1.25; }
+    code, pre { background: rgba(128,128,128,.15); border-radius: 4px; }
+    pre { padding: 1rem; overflow: auto; font-size: 0.85rem; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.9rem; margin: 1rem 0; }
+    th, td { border: 1px solid rgba(128,128,128,.4); padding: 0.4rem 0.6rem; text-align: left; }
+    @media print {
+      body { margin: 12mm; max-width: none; }
+      a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.75em; color: #555; }
+    }
+  </style>
+</head>
+<body>
+<h1>Design Patterns, Softwarestruktur und Architektur</h1>
+<p><strong>Projekt:</strong> DMS System (Demo) — Apex Motorsport<br><strong>Zielgruppe:</strong> Technische Dokumentation für Architekturreview, Onboarding und Revision<br><strong>Sprache:</strong> Deutsch  </p>
+<hr>
+<h2>Inhaltsverzeichnis</h2>
+<ol>
+<li><a href="#1-einordnung">Einordnung: Was sind Design Patterns?</a></li>
+<li><a href="#2-gesamtarchitektur">Gesamtarchitektur des Projekts</a></li>
+<li><a href="#3-backend">Backend: Muster und zugehörige Struktur</a></li>
+<li><a href="#4-frontend">Frontend: Muster und zugehörige Struktur</a></li>
+<li><a href="#5-querschnitt">Querschnitt: Datenfluss und Schichten</a></li>
+<li><a href="#6-zuordnung">Tabellarische Zuordnung Pattern → Code-Ort</a></li>
+<li><a href="#7-ordnerstruktur">Empfohlene Ordnerstruktur (Ist-Zustand)</a></li>
+<li><a href="#8-erweiterungen">Hinweise für Erweiterungen</a></li>
+<li><a href="#9-pdf">PDF-Erzeugung</a></li>
+</ol>
+<hr>
+<h2>1. Einordnung: Was sind Design Patterns? {#1-einordnung}</h2>
+<p><strong>Design Patterns</strong> (Entwurfsmuster) sind bewährte Lösungsschablonen für wiederkehrende Entwurfsprobleme. Sie beschreiben <strong>keine</strong> konkrete Implementierung, sondern <strong>Rollen</strong> (Klassen/Schnittstellen) und <strong>Zusammenspiel</strong>.</p>
+<p>In diesem Projekt sind viele Muster <strong>nicht manuell</strong> nach Gang-of-Four-Buch implementiert, sondern durch <strong>Frameworks</strong> (v. a. <strong>Spring Framework</strong>, <strong>Spring Data</strong>, <strong>React</strong>) realisiert. Die Dokumentation benennt daher:</p>
+<ul>
+<li>das <strong>klassische Pattern</strong> (z. B. „Repository“),</li>
+<li>die <strong>Spring/React-Entsprechung</strong>,</li>
+<li>den <strong>Ort im Repository</strong> (Pakete/Dateien).</li>
+</ul>
+<hr>
+<h2>2. Gesamtarchitektur des Projekts {#2-gesamtarchitektur}</h2>
+<h3>2.1 Schichtenmodell (Layered Architecture)</h3>
+<p>Das System folgt einer <strong>klassischen Drei-Schichten-Logik</strong>, auch wenn die Grenzen im Code teils <strong>Controller-lastig</strong> sind:</p>
+<table>
+<thead>
+<tr>
+<th>Schicht</th>
+<th>Rolle</th>
+<th>Technologie im Projekt</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Präsentation</strong></td>
+<td>UI, Eingabe, Anzeige</td>
+<td>React SPA (<code>frontend/</code>)</td>
+</tr>
+<tr>
+<td><strong>Anwendung / API</strong></td>
+<td>HTTP, Validierung, Orchestrierung</td>
+<td><code>@RestController</code> in Spring</td>
+</tr>
+<tr>
+<td><strong>Domäne &amp; Persistenz</strong></td>
+<td>Geschäftsobjekte, DB-Zugriff</td>
+<td>JPA-Entitäten, Repositories, teils <code>@Service</code></td>
+</tr>
+</tbody></table>
+<p><strong>Strukturelle Konsequenz:</strong> Änderungen an der Datenbank kapseln sich über <strong>Repositories</strong> und <strong>Entitäten</strong>; die API spricht nach außen mit <strong>DTOs/Records</strong> (<code>ClientProfile</code>, <code>CarProfile</code>, verschiedene <code>*View</code>- und Request-<code>record</code>s), nicht mit JPA-Entitäten als JSON-Root (gute Praxis für API-Stabilität).</p>
+<h3>2.2 Architekturstil: Monolith mit SPA-Frontend</h3>
+<ul>
+<li>Ein <strong>Spring-Boot-Monolith</strong> stellt die REST-API und PDF-Erzeugung bereit.</li>
+<li>Das <strong>Frontend</strong> ist eine eigenständige SPA, die per <strong>HTTP</strong> (in der Entwicklung über <strong>Vite-Proxy</strong>) mit dem Backend kommuniziert.</li>
+</ul>
+<p>Das entspricht dem Muster <strong>„Backend for Frontend“</strong> in lockerer Form: das Backend ist die einzige API-Quelle für die SPA.</p>
+<hr>
+<h2>3. Backend: Muster und zugehörige Struktur {#3-backend}</h2>
+<h3>3.1 Dependency Injection (DI) / Inversion of Control (IoC)</h3>
+<p><strong>Pattern:</strong> <em>Dependency Injection</em> — Abhängigkeiten werden dem Objekt von außen übergeben, statt dass es sie selbst erzeugt.</p>
+<p><strong>Spring-Umsetzung:</strong> Konstruktor-Injection in <code>@RestController</code>, <code>@Service</code>, <code>@Component</code>.</p>
+<p><strong>Struktur:</strong></p>
+<ul>
+<li><code>BackendApplication</code> startet den <strong>Spring Application Context</strong> (<code>@SpringBootApplication</code>).</li>
+<li>Beans werden <strong>registriert</strong> und <strong>verdrahtet</strong> (Controller ← Service ← Repository).</li>
+</ul>
+<p><strong>Beispiel:</strong> <code>WorkshopJobController</code> erhält Repositories und Mapper-Logik über den Konstruktor (implizit durch Spring).</p>
+<p><strong>Warum:</strong> Testbarkeit, lose Kopplung, zentrale Lebenszyklusverwaltung (Singleton-Scope als Default).</p>
+<hr>
+<h3>3.2 Repository Pattern</h3>
+<p><strong>Pattern:</strong> <em>Repository</em> — Abstraktion des Datenzugriffs; die Domäne spricht in Begriffen wie „speichern“, „finden“, nicht in SQL.</p>
+<p><strong>Spring Data JPA-Umsetzung:</strong> Interfaces <code>extends JpaRepository&lt;Entity, Id&gt;</code>.</p>
+<p><strong>Struktur:</strong></p>
+<ul>
+<li><code>…/persistence/*Repository.java</code> — z. B. <code>ClientRepository</code>, <code>CarRepository</code>, <code>InvoiceRepository</code>.</li>
+</ul>
+<p><strong>Warum:</strong> Trennung zwischen <strong>Persistenzmechanismus</strong> (JPA/Hibernate) und <strong>Anwendungslogik</strong>.</p>
+<hr>
+<h3>3.3 Data Mapper (DTO / Entity-Mapping)</h3>
+<p><strong>Pattern:</strong> <em>Mapper</em> / <em>Data Transfer Object (DTO)</em> — Übersetzung zwischen <strong>Persistenzmodell</strong> (Entity) und <strong>API-Modell</strong> (unveränderliche API-Objekte).</p>
+<p><strong>Umsetzung:</strong></p>
+<ul>
+<li><strong>DTOs als <code>record</code>:</strong> <code>ClientProfile</code>, <code>CarProfile</code>, diverse <code>*View</code>- und <code>*Request</code>-Records in Controllern.</li>
+<li><strong>Statische Mapper-Klasse</strong> <code>CustomerVehicleMapper</code> mit privatem Konstruktor (<code>final class</code>, <code>private CustomerVehicleMapper() {}</code>) — verhindert Instanziierung, nur statische Methoden <code>toClientProfile</code>, <code>toCarProfile</code>.</li>
+</ul>
+<p><strong>Struktur:</strong></p>
+<ul>
+<li><code>modules/customervehicle/api/ClientProfile.java</code>, <code>CarProfile.java</code></li>
+<li><code>modules/customervehicle/api/CustomerVehicleMapper.java</code></li>
+</ul>
+<p><strong>Warum:</strong> Entities bleiben <strong>intern</strong>; API-Formate können sich unabhängig ändern; klare Lesbarkeit der JSON-Schnittstelle.</p>
+<hr>
+<h3>3.4 Service Layer (Anwendungsdienste)</h3>
+<p><strong>Pattern:</strong> <em>Service Layer</em> / <em>Application Service</em> — gebündelte <strong>Fach- oder Transaktionslogik</strong>, die nicht in jedem Controller dupliziert werden soll.</p>
+<p><strong>Umsetzung:</strong> Klassen mit <code>@Service</code>.</p>
+<p><strong>Beispiele im Projekt:</strong></p>
+<ul>
+<li><code>InvoiceService</code> — Erzeugung von Rechnungen inkl. Nummernkreis (<code>computeNextInvoiceSequenceValue</code>), <code>@Transactional</code> wo nötig.</li>
+<li><code>InvoicePdfService</code>, <code>ContractPdfService</code>, <code>FinancingPdfService</code> — PDF-Erzeugung (technisch domänennahe „Infrastructure“-Aufgaben, aber als Spring-Services organisiert).</li>
+</ul>
+<p><strong>Struktur:</strong></p>
+<ul>
+<li><code>modules/finance/service/</code></li>
+<li><code>modules/sales/service/</code></li>
+</ul>
+<p><strong>Hinweis:</strong> Manche Controller enthalten <strong>noch viel Logik</strong> (z. B. <code>CustomerVehicleController</code>). Das ist für eine Demo üblich; eine konsequentere <strong>„Thin Controller“</strong>-Strategie würde mehr Logik in <code>@Service</code>-Klassen verschieben.</p>
+<hr>
+<h3>3.5 MVC (Model–View–Controller) — API-Variante</h3>
+<p><strong>Pattern:</strong> <em>MVC</em> — im Web-Kontext oft <strong>Model</strong> (Daten/DTOs), <strong>View</strong> (hier: JSON-Body), <strong>Controller</strong> (HTTP-Handler).</p>
+<p><strong>Spring-Web-Umsetzung:</strong> <code>@RestController</code> = Controller + serialisiertes JSON statt HTML-View.</p>
+<p><strong>Struktur:</strong> <code>modules/*/api/*Controller.java</code> — z. B. <code>FinanceController</code>, <code>SalesContractController</code>, <code>WorkshopJobController</code>.</p>
+<hr>
+<h3>3.6 Front Controller (implizit)</h3>
+<p><strong>Pattern:</strong> <em>Front Controller</em> — ein zentraler Einstiegspunkt für alle HTTP-Anfragen.</p>
+<p><strong>Umsetzung:</strong> <strong>Spring MVC <code>DispatcherServlet</code></strong> (in Spring Boot automatisch konfiguriert). Nicht als eigene Klasse sichtbar, aber architektonisch das <strong>Front-Controller-Muster</strong> der Servlet-Schicht.</p>
+<hr>
+<h3>3.7 Singleton (Bean-Scope)</h3>
+<p><strong>Pattern:</strong> <em>Singleton</em> — eine Instanz pro Anwendungskontext.</p>
+<p><strong>Spring-Umsetzung:</strong> Standard-<strong>Scope</strong> für typische Beans (<code>@Service</code>, <code>@RestController</code>, <code>@Component</code>).</p>
+<p><strong>Warum:</strong> Gemeinsame Nutzung von Diensten und Controllern ohne globale statische Variablen.</p>
+<hr>
+<h3>3.8 Template für unveränderliche API-Antworten (<code>record</code>)</h3>
+<p><strong>Pattern:</strong> oft mit <strong>Value Object</strong> oder <strong>DTO</strong> assoziiert — unveränderliche Datencontainer.</p>
+<p><strong>Java-Umsetzung:</strong> <code>record</code> (Java 16+) für Request/Response-Typen, z. B. <code>ApiResponse</code>, <code>LoginRequest</code>, <code>CreateInvoiceRequest</code>.</p>
+<p><strong>Vorteil:</strong> weniger Boilerplate, klare Gleichheit/Hash für einfache Typen.</p>
+<hr>
+<h3>3.9 Bootstrap / Initialisierung (ApplicationRunner)</h3>
+<p><strong>Pattern:</strong> <em>Initialization on startup</em> — technisch nah an <strong>Template Method</strong> / <strong>Hook</strong> (Framework ruft zu definiertem Zeitpunkt auf).</p>
+<p><strong>Umsetzung:</strong></p>
+<ul>
+<li><code>DealerStockClientBootstrap implements ApplicationRunner</code> — legt den synthetischen Kunden „Dealer Stock“ an (Pflicht für Lagerfahrzeuge).</li>
+<li><code>DemoSeedService</code> / Seeding-Komponenten — optionale Demodaten (<code>dms.seed.enabled</code>).</li>
+</ul>
+<p><strong>Struktur:</strong> <code>config/</code></p>
+<hr>
+<h3>3.10 Sicherheit: Chain of Responsibility (konzeptionell)</h3>
+<p><strong>Pattern:</strong> <em>Chain of Responsibility</em> — Anfrage durchläuft eine <strong>Kette von Filtern/Handlern</strong>.</p>
+<p><strong>Spring Security-Umsetzung:</strong> <code>SecurityFilterChain</code> — Reihenfolge von Filtern (Authentifizierung, Autorisierung, CORS, …).</p>
+<p><strong>Konfiguration:</strong> <code>config/SecurityConfig.java</code> — u. a. <code>authorizeHttpRequests</code>, CSRF, CORS.</p>
+<hr>
+<h3>3.11 Strategie (Password Encoding)</h3>
+<p><strong>Pattern:</strong> <em>Strategy</em> — austauschbare Algorithmen über eine gemeinsame Schnittstelle.</p>
+<p><strong>Umsetzung:</strong> <code>PasswordEncoder</code> mit <strong>BCrypt</strong>-Implementierung (<code>BCryptPasswordEncoder</code> als Bean).</p>
+<hr>
+<h3>3.12 API Gateway / Reverse Proxy (Entwicklung)</h3>
+<p><strong>Pattern (infrastrukturell):</strong> Proxy vor dem Backend.</p>
+<p><strong>Umsetzung (nur Dev):</strong> Vite leitet <code>/api</code> an <code>http://localhost:8080</code> weiter (<code>vite.config.ts</code>).</p>
+<hr>
+<h2>4. Frontend: Muster und zugehörige Struktur {#4-frontend}</h2>
+<h3>4.1 Container / Presentational (lose)</h3>
+<p>Viele React-Projekte trennen <strong>Container</strong> (Daten, Effekte) und <strong>Presentational</strong> (darstellen). Hier ist die App <strong>überwiegend in <code>App.tsx</code></strong> gebündelt — das ist für Demos üblich, skaliert aber schlechter.</p>
+<p><strong>Empfohlene Struktur bei Wachstum:</strong> <code>features/&lt;modul&gt;/components</code>, <code>hooks</code>, <code>api</code>.</p>
+<hr>
+<h3>4.2 Provider Pattern (React Context API)</h3>
+<p><strong>Pattern:</strong> <em>Provider</em> — Kontextobjekt für abhängige Komponenten ohne „Prop Drilling“.</p>
+<p><strong>Umsetzung:</strong></p>
+<ul>
+<li><code>AuthProvider</code> + <code>AuthContext</code> — Login-Status, Session, <code>fetch</code> zu <code>/api/auth/*</code>.</li>
+<li><code>ThemeProvider</code> + <code>ThemeContext</code> — Darstellungsthema.</li>
+</ul>
+<p><strong>Struktur:</strong> <code>auth/AuthContext.tsx</code>, <code>theme.tsx</code></p>
+<p><strong>Zugehörige Hooks:</strong> <code>useAuth()</code>, <code>useTheme()</code> — Kapselung des Kontextzugriffs.</p>
+<hr>
+<h3>4.3 Hooks Pattern (React)</h3>
+<p><strong>Pattern:</strong> <em>Hooks</em> — wiederverwendbare zustands- und nebenwirkungslogik.</p>
+<p><strong>Beispiele:</strong> <code>useState</code>, <code>useEffect</code>, <code>useCallback</code>, <code>useMemo</code> in <code>App.tsx</code> (z. B. abgeleitete Listen <code>inventoryCars</code>, <code>invRefOptions</code>).</p>
+<p><strong>Warum:</strong> Performance (<code>useMemo</code>) und stabile Referenzen (<code>useCallback</code>).</p>
+<hr>
+<h3>4.4 Internationalisierung (i18n)</h3>
+<p><strong>Struktur:</strong> <code>locales/de.ts</code>, <code>en.ts</code>, … + <code>i18n.ts</code> — zentrale Übersetzungsressourcen (kein klassisches GoF-Pattern, aber etablierte <strong>Resource-Bundle</strong>-Struktur).</p>
+<hr>
+<h2>5. Querschnitt: Datenfluss und Schichten {#5-querschnitt}</h2>
+<p>Typischer Ablauf <strong>Lesen</strong> (z. B. Kundenliste):</p>
+<ol>
+<li>Browser → <code>GET /api/v1/clients</code> (mit Session-Cookie nach Login)</li>
+<li><code>CustomerVehicleController</code> → <code>ClientRepository</code></li>
+<li>Entities → <code>CustomerVehicleMapper</code> → <code>ClientProfile</code> (Records)</li>
+<li>JSON-Antwort an SPA</li>
+</ol>
+<p>Typischer Ablauf <strong>Schreiben</strong> (z. B. Rechnung):</p>
+<ol>
+<li><code>FinanceController</code> empfängt <code>CreateInvoiceRequest</code></li>
+<li>Orchestrierung mit <code>InvoiceService</code>, Referenzauflösung (Job/Lead/Vertrag), Persistenz</li>
+<li>Optional PDF über <code>InvoicePdfService</code></li>
+</ol>
+<hr>
+<h2>6. Tabellarische Zuordnung Pattern → Code-Ort {#6-zuordnung}</h2>
+<table>
+<thead>
+<tr>
+<th>Pattern / Konzept</th>
+<th>Rolle</th>
+<th>Wo im Projekt (Orientierung)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IoC / DI</td>
+<td>Verdrahtung von Komponenten</td>
+<td>Gesamtes Backend, Spring Context</td>
+</tr>
+<tr>
+<td>Repository</td>
+<td>Datenzugriff</td>
+<td><code>…/persistence/*Repository.java</code></td>
+</tr>
+<tr>
+<td>Service Layer</td>
+<td>Fachlogik, Transaktionen</td>
+<td><code>…/service/*Service.java</code></td>
+</tr>
+<tr>
+<td>DTO / Record</td>
+<td>API-Verträge</td>
+<td>Controller-<code>record</code>s, <code>ApiResponse</code>, <code>*Profile</code></td>
+</tr>
+<tr>
+<td>Mapper</td>
+<td>Entity ↔ DTO</td>
+<td><code>CustomerVehicleMapper</code></td>
+</tr>
+<tr>
+<td>MVC (REST)</td>
+<td>HTTP-Schicht</td>
+<td><code>*Controller.java</code></td>
+</tr>
+<tr>
+<td>Front Controller</td>
+<td>Zentraler Dispatch</td>
+<td>Spring <code>DispatcherServlet</code> (Framework)</td>
+</tr>
+<tr>
+<td>Singleton</td>
+<td>Eine Bean-Instanz</td>
+<td>Standard-Scope Spring Beans</td>
+</tr>
+<tr>
+<td>Application Bootstrap</td>
+<td>Start-Hooks</td>
+<td><code>DealerStockClientBootstrap</code>, Demo-Seeding</td>
+</tr>
+<tr>
+<td>Security Filter Chain</td>
+<td>Authentifizierung/Autorisierung</td>
+<td><code>SecurityConfig</code></td>
+</tr>
+<tr>
+<td>Strategy</td>
+<td>Passwort-Hash-Algorithmus</td>
+<td><code>PasswordEncoder</code> / BCrypt</td>
+</tr>
+<tr>
+<td>Provider (React)</td>
+<td>Kontext für Auth/Theme</td>
+<td><code>AuthContext.tsx</code>, <code>theme.tsx</code></td>
+</tr>
+<tr>
+<td>Hooks</td>
+<td>UI-Logik</td>
+<td><code>App.tsx</code>, Context-Dateien</td>
+</tr>
+<tr>
+<td>Proxy (Dev)</td>
+<td>API-Weiterleitung</td>
+<td><code>vite.config.ts</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>7. Empfohlene Ordnerstruktur (Ist-Zustand) {#7-ordnerstruktur}</h2>
+<pre><code>DMS_System_DEMO/
+├── backend/
+│   ├── pom.xml
+│   ├── compose.yml                 # PostgreSQL für lokale Docker-Nutzung
+│   └── src/main/java/com/dms/backend/
+│       ├── BackendApplication.java
+│       ├── auth/                   # REST-Login, Session
+│       ├── config/                 # Security, Properties, Bootstrap, Demo-Seed
+│       └── modules/
+│           ├── customervehicle/    # api (DTOs, Mapper), persistence (Entities, Repos)
+│           ├── workshop/
+│           ├── sales/
+│           └── finance/
+│   └── src/main/resources/
+│       ├── application.properties
+│       ├── application-demo.properties
+│       └── db/migration/           # Flyway (PostgreSQL)
+├── frontend/
+│   ├── src/
+│   │   ├── App.tsx                 # Haupt-UI (groß)
+│   │   ├── auth/                 # AuthContext, Login
+│   │   ├── locales/              # i18n
+│   │   └── …
+│   └── vite.config.ts
+├── docker-compose.yml
+├── docs/                         # diese Dokumentation
+└── TECHNISCHE_DOKUMENTATION_REVISION.md
+</code></pre>
+<hr>
+<h2>8. Hinweise für Erweiterungen {#8-erweiterungen}</h2>
+<ul>
+<li><strong>Mehr Service Layer:</strong> Geschäftsregeln aus Controllern in <code>@Service</code> verschieben → klarere <strong>Single Responsibility</strong>.</li>
+<li><strong>Explizite API-Schicht:</strong> OpenAPI/Swagger generieren aus Controllern/Records.</li>
+<li><strong>Frontend modularisieren:</strong> Feature-Ordner, weniger monolithisches <code>App.tsx</code>.</li>
+<li><strong>Domain Events:</strong> bei wachsender Komplexität <em>Observer</em> / <em>Event</em> über Spring <code>ApplicationEvent</code> erwägen.</li>
+</ul>
+<hr>
+<h2>9. PDF-Erzeugung {#9-pdf}</h2>
+<p>Diese Datei ist als <strong>Markdown</strong> (<code>docs/DOKUMENTATION_DESIGN_PATTERNS_UND_STRUKTUR.md</code>) versioniert.</p>
+<h3>Option A: HTML erzeugen und im Browser als PDF speichern (im Repo vorbereitet)</h3>
+<pre><code class="language-bash">cd docs
+npm install
+npm run build:html
+</code></pre>
+<p>Anschließend <code>docs/DOKUMENTATION_DESIGN_PATTERNS_UND_STRUKTUR.html</code> im Browser öffnen → <strong>Drucken</strong> → <strong>Als PDF speichern</strong> (Chrome, Safari, Edge).</p>
+<h3>Option B: Pandoc (wenn installiert: <code>brew install pandoc</code> / Paketmanager)</h3>
+<pre><code class="language-bash">cd docs
+pandoc DOKUMENTATION_DESIGN_PATTERNS_UND_STRUKTUR.md -o DOKUMENTATION_DESIGN_PATTERNS_UND_STRUKTUR.pdf \
+  --pdf-engine=xelatex \
+  -V lang=de \
+  -V geometry:margin=2.5cm \
+  --toc
+</code></pre>
+<p>Ohne LaTeX: zuerst HTML mit Pandoc erzeugen, dann im Browser drucken:</p>
+<pre><code class="language-bash">pandoc DOKUMENTATION_DESIGN_PATTERNS_UND_STRUKTUR.md -o out.html
+</code></pre>
+<h3>Option C: Markdown-Vorschau in VS Code / Cursor</h3>
+<p>Datei öffnen → <strong>Markdown-Vorschau</strong> → <strong>Drucken</strong> → <strong>Als PDF speichern</strong>.</p>
+<hr>
+<p><em>Ende der Dokumentation</em></p>
+
+<hr/>
+<p><small>Drucken: Browser-Menü → Drucken → „Als PDF speichern“ (Chrome/Safari/Edge).</small></p>
+</body>
+</html>

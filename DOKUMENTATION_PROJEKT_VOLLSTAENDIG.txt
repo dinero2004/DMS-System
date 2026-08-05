@@ -1,0 +1,442 @@
+================================================================================
+  VOLLSTÄNDIGE PROJEKT-DOKUMENTATION — DMS SYSTEM (DEMO)
+  Apex Motorsport — Monorepo DMS_System_DEMO
+  Sprache: Deutsch | Format: reiner Text (ohne Markdown)
+  Stand: April 2026
+================================================================================
+
+Dieses eine Dokument fasst zusammen:
+  Teil A — Technische Übersicht (Revision, Stack, API, Sicherheit, Betrieb)
+  Teil B — Design Patterns, Softwarestruktur, Architektur
+
+Die Markdown-Quellen im Repository können bei Änderungen am Code aktualisiert
+werden; diese TXT-Datei ist die zusammengeführte Lesefassung.
+
+
+================================================================================
+TEIL A — TECHNISCHE DOKUMENTATION (REVISION)
+================================================================================
+
+Zweck: Übersicht für technische Revision, Architekturreview und Betriebsübernahme.
+
+
+1. KURZBESCHREIBUNG DES SYSTEMS
+-------------------------------
+
+Das Projekt ist eine Dealer-Management-System-Demo („Apex Motorsport — DMS“) mit:
+
+  • Web-Frontend: Single-Page-Application (React)
+  • REST-Backend: Spring Boot
+  • Datenbank: PostgreSQL im Zielbetrieb; optional H2 für lokale Demos ohne eigene Datenbank-Infrastruktur
+
+Funktionsbereiche (fachlich):
+
+  Bereich Kunden & Fahrzeuge: Kundenstamm, Fahrzeuge (Kundenbesitz / Lagerbestand)
+  Bereich Werkstatt: Aufträge (Jobs), Positionen, Status
+  Bereich Vertrieb: Leads, Verträge, Finanzierungs- und Leasingangebote
+  Bereich Finanzen: Rechnungen, PDF-Erzeugung, Status
+  Bereich Auswertung: Dashboard mit Kennzahlen und Diagrammen
+
+
+2. ARCHITEKTURÜBERBLICK
+-----------------------
+
+2.1 Logische Schichten (vereinfacht als Text)
+
+  Browser: React SPA / Vite sendet HTTP-Anfragen an /api.
+  Anwendungsserver: Spring Boot REST, Spring Security, Domänenlogik und PDF-Dienste,
+    Zugriff über JPA/Hibernate.
+  Datenhaltung: PostgreSQL (Standard) oder H2 (Profil „demo“).
+
+  Frontend spricht ausschließlich per HTTP mit dem Backend (Entwicklung: Vite-Proxy
+  auf Port 8080). Backend kapselt Geschäftsregeln, Persistenz und PDF-Generierung.
+  Authentifizierung: session-basiert (Cookie), siehe Abschnitt 6.
+
+2.2 Repository-Struktur (Projektordner)
+
+  backend/          Maven-Projekt, Spring Boot 4, Java 21
+  frontend/         npm/Vite, React 19, TypeScript
+  docker-compose.yml  bindet backend/compose.yml ein (PostgreSQL für lokale Entwicklung)
+  backend/compose.yml Nur-Dienst-Definition PostgreSQL
+  scripts/start-postgres-docker.sh  Hilfsskript, wenn Docker läuft
+
+
+3. TECHNOLOGIE-STACK
+--------------------
+
+Backend (laut pom.xml):
+
+  Laufzeit: Java 21
+  Framework: Spring Boot 4.0.x
+  Web: Spring Web MVC
+  Persistenz: Spring Data JPA, Hibernate
+  Datenbanktreiber: PostgreSQL (Runtime), H2 (Runtime, Profil demo)
+  Schema-Migration: Flyway bei PostgreSQL aktiv; bei Profil demo deaktiviert
+  Validierung: Jakarta Bean Validation
+  Sicherheit: Spring Security (Session, In-Memory-User in der Demo)
+  Monitoring: Spring Boot Actuator (/actuator/health)
+  PDF: OpenPDF (librepdf)
+
+Frontend:
+
+  UI: React 19, TypeScript
+  Build/Dev: Vite 8
+  Diagramme: Recharts
+  Internationalisierung: i18next, react-i18next (DE/EN/FR/IT)
+
+
+4. BACKEND-MODULE (PAKETSTRUKTUR)
+---------------------------------
+
+Paketbasis: com.dms.backend
+
+  auth: Login, Logout, /api/auth/me
+  config: Security, Auth-Properties, Demo-Seeding, Dealer-Stock-Bootstrap
+  modules.customervehicle: REST /api/v1/clients, /api/v1/cars, Mapper, Entitäten
+  modules.workshop: Werkstattaufträge, /api/v1/workshop/jobs
+  modules.sales: Leads, Verträge, Finanzierung, PDF-Dienste
+  modules.finance: Rechnungen, PDF, Referenzobjekte
+  shared: Gemeinsame Konstanten, ApiResponse
+
+
+5. REST-API (ÜBERSICHT)
+-----------------------
+
+Basis-URL (Standard): http://localhost:8080
+
+Hinweis: Pfade unter /api/** (außer explizit freigegebenen Auth-Pfaden) erfordern nach
+Login eine authentifizierte Session.
+
+5.1 Authentifizierung
+
+  POST /api/auth/login     JSON username, password — setzt Session
+  POST /api/auth/logout    Session beenden
+  GET  /api/auth/me        aktueller Benutzer (für Preflight/Status oft öffentlich)
+
+Demo-Zugangsdaten konfigurierbar: dms.auth.username, dms.auth.password in
+application.properties bzw. application-demo.properties.
+
+5.2 Kunden und Fahrzeuge (CustomerVehicleController)
+
+  GET/POST   /api/v1/clients
+  PUT/DELETE /api/v1/clients/{id}
+  GET/POST   /api/v1/cars
+  PUT/DELETE /api/v1/cars/{id}
+
+Lagerbestand-Fahrzeuge nutzen den synthetischen Kunden „Dealer Stock“
+(DealerStockClientBootstrap beim Start).
+
+5.3 Werkstatt
+
+  GET/POST /api/v1/workshop/jobs
+  POST     /api/v1/workshop/jobs/{id}/status
+  POST/DELETE /api/v1/workshop/jobs/{id}/items bzw. .../items/{itemId}
+
+5.4 Vertrieb
+
+  GET/POST /api/v1/sales/leads
+  POST     /api/v1/sales/leads/{id}/status
+  GET/POST /api/v1/sales/contracts
+  GET      /api/v1/sales/contracts/{id}/pdf
+  GET/POST /api/v1/sales/financing
+  GET      /api/v1/sales/financing/{id}/pdf
+
+5.5 Finanzen
+
+  GET/POST /api/v1/finance/invoices
+  POST     /api/v1/finance/invoices/{id}/status
+  GET      /api/v1/finance/invoices/{id}/pdf
+
+Rechnungen können u. a. an Werkstattaufträge, Verkaufsleads und Verkaufsverträge
+gebunden sein (Referenztyp und Referenz-ID in der Entität).
+
+5.6 Betrieb
+
+  GET /actuator/health — Liveness/Readiness (Security-Regeln beachten)
+
+
+6. SICHERHEIT (REVISIONSRELEVANT)
+---------------------------------
+
+6.1 Aktueller Stand (Demo)
+
+  CSRF für die API deaktiviert (typisch für session-basierte SPAs; für Produktion
+    gesondert bewerten).
+  CORS auf http://localhost:* und http://127.0.0.1:* beschränkt, Credentials erlaubt.
+  Ein In-Memory-Benutzer aus Konfiguration; Passwort-Hashing mit BCrypt.
+  Kein OAuth2/OpenID; keine feingranularen Rollen pro API-Ressource in dieser Demo.
+
+6.2 Empfehlungen für produktiven Betrieb
+
+  Starke Geheimnisse, externe Konfiguration (Umgebungsvariablen, Secrets).
+  Echte Benutzerverwaltung statt In-Memory-Demo-User.
+  HTTPS, strenge CORS-Origins, CSRF-Strategie für Cookies neu bewerten.
+  Actuator-Endpunkte absichern oder deaktivieren.
+
+
+7. DATENHALTUNG UND PROFILE
+---------------------------
+
+7.1 Produktionsnaher Modus (PostgreSQL)
+
+  Konfiguration: application.properties
+  JDBC-URL: jdbc:postgresql://localhost:5432/dms
+  Benutzer/Passwort: dms / dms — in Produktion ändern
+  Flyway aktiv (spring.flyway.enabled=true)
+  JPA: hibernate.ddl-auto=validate — Schema aus Migrationen
+  Migrationen unter: backend/src/main/resources/db/migration/ (u. a. V3, V8–V13)
+
+7.2 Demo-Profil (demo)
+
+  Datei: application-demo.properties
+  H2-Dateidatenbank unter Benutzerverzeichnis .dms-h2/ (überdauert Neustarts)
+  Flyway deaktiviert; Schema über Hibernate „update“
+  Optional Demo-Seed (dms.seed.enabled=true im Demo-Profil)
+
+  Start Backend mit Demo:
+    cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=demo
+
+7.3 Docker (nur Datenbank)
+
+  docker compose up -d in der Projektwurzel startet PostgreSQL gemäß backend/compose.yml
+
+
+8. FRONTEND
+-----------
+
+8.1 Entwicklung
+
+  cd frontend && npm install && npm run dev
+
+  Standard-URL: http://localhost:5173
+  API-Aufrufe zu /api und /actuator werden per vite.config.ts auf Port 8080 proxied.
+
+8.2 Produktionsbuild
+
+  cd frontend && npm run build
+
+  Ausgabe: frontend/dist/ — statische Dateien.
+
+
+9. ABHÄNGIGKEITEN NACH AUSSEN
+-----------------------------
+
+  PostgreSQL: Primärdatenbank ohne demo-Profil
+  Browser: SPA mit Session-Cookies für die API
+  Docker: optional für Postgres lokal
+
+Keine fest eingebundenen externen SaaS-APIs im dokumentierten Umfang (außer ggf.
+CDNs für Schriftarten in index.html).
+
+
+10. BEKANNTE EINSCHRÄNKUNGEN (DEMO)
+-----------------------------------
+
+  1) Sicherheitsmodell ist demonstrativ, nicht produktionsreif.
+  2) H2-Demo kann vom reinen Flyway-Schema abweichen; Abnahme mit PostgreSQL + Flyway.
+  3) Administration im UI teils Platzhalter.
+  4) Performance, Lasttests, Hochverfügbarkeit nicht Gegenstand dieser Dokumentation.
+
+
+11. BUILD- UND TESTKOMMANDOS
+----------------------------
+
+  Backend kompilieren:  cd backend && mvn -q -DskipTests compile
+  Backend-Tests:        cd backend && mvn test   (Demo-Profil in Tests aktiv)
+  Frontend-Build:         cd frontend && npm run build
+
+
+12. VERSIONSHINWEIS (TEIL A)
+----------------------------
+
+Der beschriebene Stand entspricht der Codebasis zum Erstellungszeitpunkt. Bei Änderungen
+an Modulen, APIs oder Sicherheit ist die Dokumentation durch das Team zu pflegen.
+
+
+================================================================================
+TEIL B — DESIGN PATTERNS, SOFTWARESTRUKTUR, ARCHITEKTUR
+================================================================================
+
+1. EINORDNUNG: DESIGN PATTERNS
+------------------------------
+
+Design Patterns (Entwurfsmuster) sind bewährte Lösungsschablonen für wiederkehrende
+Entwurfsprobleme. Sie beschreiben keine konkrete Implementierung, sondern Rollen
+(Klassen/Schnittstellen) und Zusammenspiel.
+
+In diesem Projekt sind viele Muster nicht manuell nach dem Gang-of-Four-Buch umgesetzt,
+sondern durch Frameworks (Spring Framework, Spring Data, React). Die Dokumentation
+nennt das klassische Pattern, die Spring- bzw. React-Entsprechung und den Ort im Code.
+
+
+2. GESAMTARCHITEKTUR
+--------------------
+
+2.1 Schichtenmodell (Layered Architecture)
+
+  Präsentation:     React SPA (frontend/) — UI, Eingabe, Anzeige
+  Anwendung/API:    Spring RestController — HTTP, Validierung, Orchestrierung
+  Domäne/Persistenz: JPA-Entitäten, Repositories, teils @Service
+
+API spricht nach außen mit DTOs/Records (ClientProfile, CarProfile, diverse View- und
+Request-Records), nicht mit JPA-Entitäten als JSON-Wurzel — stabile API.
+
+2.2 Monolith mit SPA-Frontend
+
+  Ein Spring-Boot-Monolith liefert REST-API und PDF-Erzeugung.
+  Das Frontend ist eine SPA; in der Entwicklung verbindet der Vite-Proxy mit dem Backend.
+  Entspricht locker dem „Backend for Frontend“-Gedanken: eine API-Quelle für die SPA.
+
+
+3. BACKEND: MUSTER UND STRUKTUR
+-------------------------------
+
+3.1 Dependency Injection (DI) / Inversion of Control (IoC)
+
+  Abhängigkeiten werden injiziert (Konstruktor-Injection bei RestController, Service,
+  Component). BackendApplication startet den Spring Application Context.
+  Vorteil: Testbarkeit, lose Kopplung, Singleton als Standard-Bean-Scope.
+
+3.2 Repository Pattern
+
+  Abstraktion des Datenzugriffs über Spring Data JPA: Interfaces extends JpaRepository.
+  Ort: …/persistence/*Repository.java (z. B. ClientRepository, CarRepository, InvoiceRepository).
+
+3.3 Data Mapper / DTO
+
+  Übersetzung Entity zu API: Records wie ClientProfile, CarProfile; statische Klasse
+  CustomerVehicleMapper (final, privater Konstruktor) mit toClientProfile, toCarProfile.
+  Ort: modules/customervehicle/api/
+
+3.4 Service Layer
+
+  @Service-Klassen bündeln Fach- und Transaktionslogik.
+  Beispiele: InvoiceService; InvoicePdfService, ContractPdfService, FinancingPdfService.
+  Ordner: modules/finance/service/, modules/sales/service/
+  Hinweis: Einige Controller sind noch dick (z. B. CustomerVehicleController); „Thin
+  Controller“ würde mehr Logik in Services verschieben.
+
+3.5 MVC (REST)
+
+  RestController liefert JSON statt HTML-View. Controller unter modules/*/api/*Controller.java.
+
+3.6 Front Controller (implizit)
+
+  Spring MVC DispatcherServlet als zentraler HTTP-Einstieg (Framework, nicht eigene Klasse).
+
+3.7 Singleton (Bean-Scope)
+
+  Standard für Services und Controller im Spring-Kontext.
+
+3.8 Java Records für API-Verträge
+
+  ApiResponse, LoginRequest, CreateInvoiceRequest usw. — weniger Boilerplate.
+
+3.9 Bootstrap (ApplicationRunner)
+
+  DealerStockClientBootstrap legt den Kunden „Dealer Stock“ an.
+  DemoSeedService bei dms.seed.enabled.
+  Konfiguration unter config/
+
+3.10 Sicherheit (Chain of Responsibility, konzeptionell)
+
+  SecurityFilterChain mit Filtern für Auth, CORS usw. Konfiguration: SecurityConfig.java.
+
+3.11 Strategy (Passwort)
+
+  PasswordEncoder mit BCryptPasswordEncoder als Bean.
+
+3.12 Reverse Proxy (nur Entwicklung)
+
+  Vite leitet /api an http://localhost:8080 weiter (vite.config.ts).
+
+
+4. FRONTEND: MUSTER UND STRUKTUR
+-------------------------------
+
+4.1 Container/Presentational
+
+  Viel Logik liegt in App.tsx (Demo-typisch); bei Wachstum: features/, hooks/, api/.
+
+4.2 Provider Pattern (React Context)
+
+  AuthProvider/AuthContext für Login und Session; ThemeProvider/ThemeContext für Darstellung.
+  Dateien: auth/AuthContext.tsx, theme.tsx — Hooks useAuth, useTheme.
+
+4.3 Hooks
+
+  useState, useEffect, useCallback, useMemo in App.tsx u. a. für abgeleitete Listen.
+
+4.4 i18n
+
+  locales/de.ts, en.ts, … und i18n.ts — zentrale Übersetzungen.
+
+
+5. QUERSCHNITT: DATENFLUSS
+-------------------------
+
+Lesen (Beispiel Kundenliste):
+  1) Browser GET /api/v1/clients mit Session-Cookie
+  2) CustomerVehicleController nutzt ClientRepository
+  3) Entities werden über CustomerVehicleMapper zu ClientProfile
+  4) JSON an die SPA
+
+Schreiben (Beispiel Rechnung):
+  1) FinanceController empfängt CreateInvoiceRequest
+  2) InvoiceService, Referenzauflösung, Persistenz
+  3) optional PDF über InvoicePdfService
+
+
+6. ZUORDNUNG PATTERN → CODE (KURZ)
+----------------------------------
+
+  IoC/DI: gesamtes Backend, Spring Context
+  Repository: …/persistence/*Repository.java
+  Service Layer: …/service/*Service.java
+  DTO/Record: Controller-Records, ApiResponse, *Profile
+  Mapper: CustomerVehicleMapper
+  MVC: *Controller.java
+  Front Controller: DispatcherServlet (Framework)
+  Singleton: Standard Spring-Beans
+  Bootstrap: DealerStockClientBootstrap, Demo-Seeding
+  Security: SecurityConfig
+  Strategy: PasswordEncoder / BCrypt
+  React Provider: AuthContext, theme
+  Hooks: App.tsx, Context-Dateien
+  Dev-Proxy: vite.config.ts
+
+
+7. ORDNERSTRUKTUR (IST)
+-----------------------
+
+DMS_System_DEMO/
+  backend/           pom.xml, compose.yml, Java-Pakete auth, config, modules (customervehicle,
+                     workshop, sales, finance), resources mit application*.properties,
+                     db/migration (Flyway)
+  frontend/          src mit App.tsx, auth, locales, vite.config.ts
+  docker-compose.yml
+  docs/              ergänzende Markdown-/HTML-Dokumentation
+  TECHNISCHE_DOKUMENTATION_REVISION.md
+  DOKUMENTATION_PROJEKT_VOLLSTAENDIG.txt  (diese Datei)
+
+
+8. HINWEISE FÜR ERWEITERUNGEN
+-----------------------------
+
+  Mehr Logik in @Service (Thin Controller).
+  OpenAPI/Swagger aus Controllern/Records.
+  Frontend in Feature-Module schneiden.
+  Bei Komplexität: Domain-Events über Spring ApplicationEvent.
+
+
+9. PDF / DRUCK (OPTIONAL)
+-------------------------
+
+  HTML aus Markdown: cd docs && npm install && npm run build:html
+  Dann DOKUMENTATION_DESIGN_PATTERNS_UND_STRUKTUR.html im Browser öffnen und als PDF
+  drucken. Alternativ Pandoc oder Markdown-Vorschau im Editor drucken.
+
+
+================================================================================
+ENDE DER VOLLSTÄNDIGEN PROJEKT-DOKUMENTATION
+================================================================================

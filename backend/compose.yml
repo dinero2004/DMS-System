@@ -1,0 +1,17 @@
+# Started automatically when you run `mvn spring-boot:run` (spring-boot-docker-compose),
+# or manually: docker compose -f compose.yml up -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dms-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: dms
+      POSTGRES_PASSWORD: dms
+      POSTGRES_DB: dms
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dms -d dms"]
+      interval: 3s
+      timeout: 5s
+      retries: 8
