@@ -1,0 +1,26 @@
+meta {
+  name: Create Service Record
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/api/service-records
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "vehicleId": 1,
+    "serviceDate": "2026-05-23",
+    "mileageKm": 82500,
+    "description": "MVP test service record",
+    "performedBy": "DMS Demo Workshop",
+    "cost": 450.00
+  }
+}

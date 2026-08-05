@@ -1,0 +1,21 @@
+meta {
+  name: Suggest Vehicle Valuation
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/api/vehicle-valuations/suggest
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "vehicleId": 1
+  }
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Create Manufacturer Protocol
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/api/manufacturer-protocols
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "manufacturer": "Mercedes-Benz",
+    "model": "C-Class",
+    "generation": "W206",
+    "inspectionChecklist": "Check digital service record, suspension, brakes, tyres, body condition, infotainment, and driver assistance systems.",
+    "knownIssues": "Inspect software update state, electronic systems, tyre wear, and evidence of accident repairs.",
+    "valuationGuidance": "Mileage, trim, options, dealer service history, and body condition should drive the MVP estimate."
+  }
+}

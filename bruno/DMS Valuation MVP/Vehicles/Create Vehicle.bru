@@ -1,0 +1,29 @@
+meta {
+  name: Create Vehicle
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/api/vehicles
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "vin": "TESTVIN9876543210",
+    "manufacturer": "Audi",
+    "model": "A4",
+    "modelYear": 2022,
+    "mileageKm": 36000,
+    "fuelType": "Petrol",
+    "transmission": "Automatic",
+    "firstRegistrationDate": "2022-05-14",
+    "askingPrice": 31200.00
+  }
+}

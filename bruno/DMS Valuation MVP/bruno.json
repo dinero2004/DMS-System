@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "DMS Valuation MVP",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
