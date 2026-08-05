@@ -1,0 +1,45 @@
+services:
+  valupilot-db:
+    image: postgres:16-alpine
+    container_name: valupilot-dms-db
+    environment:
+      POSTGRES_DB: dms_valuation
+      POSTGRES_USER: dms_user
+      POSTGRES_PASSWORD: dms_password
+    ports:
+      - "55432:5432"
+    volumes:
+      - valupilot-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dms_user -d dms_valuation"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  valupilot-api:
+    build:
+      context: .
+    container_name: valupilot-dms-api
+    environment:
+      DB_URL: jdbc:postgresql://valupilot-db:5432/dms_valuation
+      DB_USERNAME: dms_user
+      DB_PASSWORD: dms_password
+      SERVER_PORT: 8080
+    ports:
+      - "18080:8080"
+    depends_on:
+      valupilot-db:
+        condition: service_healthy
+
+  valupilot-web:
+    build:
+      context: ./frontend
+    container_name: valupilot-dms-web
+    ports:
+      - "15173:80"
+    depends_on:
+      - valupilot-api
+
+volumes:
+  valupilot-db-data:
+    name: valupilot-dms-db-data

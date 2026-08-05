@@ -1,0 +1,9 @@
+services:
+  veloce-web:
+    build:
+      context: .
+    container_name: veloce-dms-web
+    environment:
+      PORT: 8080
+    ports:
+      - "15175:8080"

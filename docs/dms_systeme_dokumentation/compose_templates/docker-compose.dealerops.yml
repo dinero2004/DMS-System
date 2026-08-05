@@ -1,0 +1,48 @@
+services:
+  dealerops-db:
+    image: postgres:16-alpine
+    container_name: dealerops-command-dms-db
+    environment:
+      POSTGRES_DB: dms
+      POSTGRES_USER: dms
+      POSTGRES_PASSWORD: dms
+    ports:
+      - "55433:5432"
+    volumes:
+      - dealerops-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dms -d dms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  dealerops-api:
+    build:
+      context: ./backend
+    container_name: dealerops-command-dms-api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://dealerops-db:5432/dms
+      SPRING_DATASOURCE_USERNAME: dms
+      SPRING_DATASOURCE_PASSWORD: dms
+      SERVER_PORT: 8080
+      DMS_SEED_ENABLED: "true"
+      DMS_AUTH_USERNAME: demo
+      DMS_AUTH_PASSWORD: demo
+    ports:
+      - "18081:8080"
+    depends_on:
+      dealerops-db:
+        condition: service_healthy
+
+  dealerops-web:
+    build:
+      context: ./frontend
+    container_name: dealerops-command-dms-web
+    ports:
+      - "15174:80"
+    depends_on:
+      - dealerops-api
+
+volumes:
+  dealerops-db-data:
+    name: dealerops-command-dms-db-data
