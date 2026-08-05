@@ -1,0 +1,12 @@
+{
+  "name": "veloce-dealer-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Veloce Dealer OS DMS dashboard backed by exported dealer data.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
