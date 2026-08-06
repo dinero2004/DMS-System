@@ -5,6 +5,10 @@ Systempfad: `/Users/lazarminkov/Documents/DMS_System_DEMO/dealer-management-syst
 Docker-Web: `http://localhost:15174`  
 Docker-API: `http://localhost:18081`
 
+## AI-Assisted Documentation and Co-Development Statement
+
+Diese Systemdokumentation wurde mit Unterstützung von OpenAI Codex (Codex AI) erstellt. Das dazugehörige DMS-Codeprojekt wurde in einem KI-gestützten Co-Development-Prozess konzipiert, analysiert, strukturiert und mitentwickelt. Codex unterstützte insbesondere bei technischer Dokumentationsstruktur, Codeanalyse, Docker-/GitHub-Aufbereitung und branchspezifischer Organisation. Fachliche Zielsetzung, Projektausrichtung, Auswahlentscheidungen, Prüfung und finale Verantwortung liegen beim Projektverfasser Lazar Minkov.
+
 ## 1. Kurzbeschreibung
 
 DealerOps Command DMS ist die umfangreichste der drei DMS-Anwendungen. Während ValuPilot auf Bewertung fokussiert ist und Veloce Daten schnell sichtbar macht, bildet DealerOps mehrere operative Autohausprozesse ab.

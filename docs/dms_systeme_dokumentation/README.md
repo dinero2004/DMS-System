@@ -5,6 +5,10 @@ Projektkontext: Creative Studio 3 / DMS-Systeme für Autohäuser
 
 Dieses Verzeichnis enthält ein Hauptdokument und drei Einzeldokumentationen zu den DMS-Systemen im Workspace `DMS_System_DEMO/dealer-management-systems`.
 
+## AI-Assisted Documentation and Co-Development Statement
+
+Dieses Dokumentationspaket wurde mit Unterstützung von OpenAI Codex (Codex AI) erstellt. Das dazugehörige DMS-Codeprojekt wurde in einem KI-gestützten Co-Development-Prozess konzipiert, analysiert, strukturiert und mitentwickelt. Codex unterstützte insbesondere bei technischer Dokumentationsstruktur, Codeanalyse, Docker-/GitHub-Aufbereitung und branchspezifischer Organisation. Fachliche Zielsetzung, Projektausrichtung, Auswahlentscheidungen, Prüfung und finale Verantwortung liegen beim Projektverfasser Lazar Minkov.
+
 ## Dokumente
 
 1. `00_Hauptdokument_Technische_Grundsaetze_und_Struktur.md`  
