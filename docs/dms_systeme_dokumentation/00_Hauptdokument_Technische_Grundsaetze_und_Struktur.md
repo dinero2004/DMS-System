@@ -5,6 +5,10 @@ Autor: Lazar Minkov
 Projekt: Dealer-Management-Systeme für Autohäuser  
 Repository: `https://github.com/dinero2004/DMS-System.git`
 
+## AI-Assisted Documentation and Co-Development Statement
+
+Dieses Hauptdokument wurde mit Unterstützung von OpenAI Codex (Codex AI) erstellt. Das dazugehörige DMS-Codeprojekt wurde in einem KI-gestützten Co-Development-Prozess konzipiert, analysiert, strukturiert und mitentwickelt. Codex unterstützte insbesondere bei technischer Dokumentationsstruktur, Codeanalyse, Docker-/GitHub-Aufbereitung und branchspezifischer Organisation. Fachliche Zielsetzung, Projektausrichtung, Auswahlentscheidungen, Prüfung und finale Verantwortung liegen beim Projektverfasser Lazar Minkov.
+
 ## 1. Zweck dieses Dokuments
 
 Dieses Hauptdokument beschreibt die gemeinsamen technischen Entscheidungen hinter drei webbasierten Dealer-Management-Systemen. Es ist bewusst nicht als schweres Betriebshandbuch geschrieben, sondern als gut strukturiertes technisches Rezept: Eine Webentwicklungsstudentin oder ein Webentwicklungsstudent soll nachvollziehen können, welche Bausteine benötigt werden, warum sie gewählt wurden und wie sie zusammenspielen.

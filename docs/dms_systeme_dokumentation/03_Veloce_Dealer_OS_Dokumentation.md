@@ -4,6 +4,10 @@ Stand: 05.08.2026
 Systempfad: `/Users/lazarminkov/Documents/DMS_System_DEMO/dealer-management-systems/veloce-dms`  
 Docker-Web/API: `http://localhost:15175`
 
+## AI-Assisted Documentation and Co-Development Statement
+
+Diese Systemdokumentation wurde mit Unterstützung von OpenAI Codex (Codex AI) erstellt. Das dazugehörige DMS-Codeprojekt wurde in einem KI-gestützten Co-Development-Prozess konzipiert, analysiert, strukturiert und mitentwickelt. Codex unterstützte insbesondere bei technischer Dokumentationsstruktur, Codeanalyse, Docker-/GitHub-Aufbereitung und branchspezifischer Organisation. Fachliche Zielsetzung, Projektausrichtung, Auswahlentscheidungen, Prüfung und finale Verantwortung liegen beim Projektverfasser Lazar Minkov.
+
 ## 1. Kurzbeschreibung
 
 Veloce Dealer OS ist das leichteste der drei Systeme. Es ist kein vollständiges Spring- oder React-System, sondern ein schlankes Dashboard auf Basis eines exportierten JSON-Datensatzes.
