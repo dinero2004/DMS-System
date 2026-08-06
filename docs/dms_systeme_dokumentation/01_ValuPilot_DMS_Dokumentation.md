@@ -5,6 +5,10 @@ Systempfad: `/Users/lazarminkov/Documents/DMS_System_DEMO/dealer-management-syst
 Docker-Web: `http://localhost:15173`  
 Docker-API: `http://localhost:18080`
 
+## AI-Assisted Documentation and Co-Development Statement
+
+Diese Systemdokumentation wurde mit Unterstützung von OpenAI Codex (Codex AI) erstellt. Das dazugehörige DMS-Codeprojekt wurde in einem KI-gestützten Co-Development-Prozess konzipiert, analysiert, strukturiert und mitentwickelt. Codex unterstützte insbesondere bei technischer Dokumentationsstruktur, Codeanalyse, Docker-/GitHub-Aufbereitung und branchspezifischer Organisation. Fachliche Zielsetzung, Projektausrichtung, Auswahlentscheidungen, Prüfung und finale Verantwortung liegen beim Projektverfasser Lazar Minkov.
+
 ## 1. Kurzbeschreibung
 
 ValuPilot DMS ist ein fokussierter DMS-Prototyp für Fahrzeugdaten und Fahrzeugbewertung. Das System untersucht, wie Fahrzeug-, Service-, Hersteller- und Marktdaten genutzt werden können, um einen nachvollziehbaren Preisvorschlag zu erzeugen.
