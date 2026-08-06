@@ -1,0 +1,13 @@
+{
+  "name": "veloce-dealer-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Role-focused dealership cockpit backed by the DealerOps system of record.",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
