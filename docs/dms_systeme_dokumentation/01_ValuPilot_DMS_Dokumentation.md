@@ -1,7 +1,6 @@
 # Systemdokumentation 1: ValuPilot DMS
 
 Stand: 05.08.2026  
-Systempfad: `/Users/lazarminkov/Documents/DMS_System_DEMO/dealer-management-systems/valupilot-dms`  
 Docker-Web: `http://localhost:15173`  
 Docker-API: `http://localhost:18080`
 
