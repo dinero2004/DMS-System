@@ -201,7 +201,7 @@ Die Systeme werden dort mit eigenen Services, Ports, Netzwerken und Volumes getr
 Start aller Systeme:
 
 ```bash
-cd /Users/lazarminkov/Documents/DMS_System_DEMO/dealer-management-systems
+cd /Users/yourFilePath/Documents/DMS_System_DEMO/dealer-management-systems
 docker compose up -d
 ```
 
