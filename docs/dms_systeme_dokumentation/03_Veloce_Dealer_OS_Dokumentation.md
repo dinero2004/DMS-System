@@ -1,7 +1,6 @@
 # Systemdokumentation 3: Veloce Dealer OS
 
 Stand: 05.08.2026  
-Systempfad: `/Users/lazarminkov/Documents/DMS_System_DEMO/dealer-management-systems/veloce-dms`  
 Docker-Web/API: `http://localhost:15175`
 
 ## AI-Assisted Documentation and Co-Development Statement
