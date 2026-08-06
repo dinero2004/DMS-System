@@ -11,7 +11,7 @@ Dieses Hauptdokument wurde mit Unterstützung von OpenAI Codex (Codex AI) erstel
 
 ## 1. Zweck dieses Dokuments
 
-Dieses Hauptdokument beschreibt die gemeinsamen technischen Entscheidungen hinter drei webbasierten Dealer-Management-Systemen. Es ist bewusst nicht als schweres Betriebshandbuch geschrieben, sondern als gut strukturiertes technisches Rezept: Eine Webentwicklungsstudentin oder ein Webentwicklungsstudent soll nachvollziehen können, welche Bausteine benötigt werden, warum sie gewählt wurden und wie sie zusammenspielen.
+Dieses Hauptdokument beschreibt die gemeinsamen technischen Entscheidungen hinter drei webbasierten Dealer-Management-Systemen.
 
 Die drei Systeme verfolgen unterschiedliche Schwerpunkte:
 
