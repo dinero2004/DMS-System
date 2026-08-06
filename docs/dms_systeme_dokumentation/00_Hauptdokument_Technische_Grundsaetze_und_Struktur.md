@@ -233,7 +233,7 @@ docker compose down -v
 
 Wichtig: `down -v` löscht die persistenten Datenbankdaten. Für Demos ist das manchmal hilfreich, für echte Daten wäre es gefährlich.
 
-## 8. Docker-Architektur als Rezept
+## 8. Docker-Architektur
 
 Für ein ähnliches DMS-Projekt lässt sich folgender Aufbau ableiten:
 
