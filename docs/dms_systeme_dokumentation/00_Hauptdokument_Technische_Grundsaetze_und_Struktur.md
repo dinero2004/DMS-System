@@ -65,8 +65,6 @@ flowchart LR
   Logic --> Output["Bewertung, Prozesse, PDFs, Kennzahlen"]
 ```
 
-Dieses Bild ist bewusst einfach. Für ein Diplomprojekt ist es wichtiger, die Verantwortlichkeiten klar zu erklären, als die Architektur künstlich größer zu machen.
-
 ## 5. Eingesetzte Technologien im Überblick
 
 | Bereich | Technologie | Eingesetzt in | Zweck |
