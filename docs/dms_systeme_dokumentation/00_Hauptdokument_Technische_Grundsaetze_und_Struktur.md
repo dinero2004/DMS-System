@@ -37,7 +37,7 @@ Die gemeinsame technische Denkweise lautet:
 
 Die drei Systeme liegen lokal unter:
 
-`/Users/lazarminkov/Documents/DMS_System_DEMO/dealer-management-systems`
+`/Users/yourFilePath/Documents/DMS_System_DEMO/dealer-management-systems`
 
 Wichtige Ordner:
 
