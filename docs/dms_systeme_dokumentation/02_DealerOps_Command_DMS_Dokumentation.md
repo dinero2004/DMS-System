@@ -1,7 +1,6 @@
 # Systemdokumentation 2: DealerOps Command DMS
 
 Stand: 05.08.2026  
-Systempfad: `/Users/lazarminkov/Documents/DMS_System_DEMO/dealer-management-systems/dealerops-command-dms`  
 Docker-Web: `http://localhost:15174`  
 Docker-API: `http://localhost:18081`
 
@@ -224,7 +223,7 @@ Ports:
 Start:
 
 ```bash
-cd /Users/lazarminkov/Documents/DMS_System_DEMO/dealer-management-systems
+cd /Users/yourFilePath//Documents/DMS_System_DEMO/dealer-management-systems
 docker compose up -d dealerops-web
 ```
 
